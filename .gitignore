@@ -1,0 +1,12 @@
+
+# Dependencies
+/node_modules
+
+# Production
+/build
+/dist
+.env
+
+# Veritabanı kurulum dosyaları
+setup.sql
+install-db.js

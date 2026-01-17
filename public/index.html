@@ -1,0 +1,3220 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beyaz Eşya KDS - Yönetim Paneli</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-bg: #064e3b;
+            --sidebar-active: #059669;
+            --page-bg: #f0fdf4;
+            --card-bg: #ffffff;
+            
+            --text-main: #064e3b;
+            --text-muted: #64748b;
+            
+            --brand-color: #059669;
+            --accent-color: #dc2626;
+            --success-color: #15803d;
+            --warning-color: #d97706;
+
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            
+            --radius: 12px;
+        }
+
+        body.dark-mode {
+            --page-bg: #000000;
+            --card-bg: #052007;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --sidebar-active: #374151;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            background-color: var(--page-bg); 
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+        
+        .header { 
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(240, 253, 244, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex; 
+            flex-direction: row; 
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            z-index: 1000;
+            padding: 0 30px;
+            box-sizing: border-box;
+            transition: background 0.3s;
+        }
+        body.dark-mode .header {
+            background: rgba(5, 32, 7, 0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .header h2 { 
+            margin: 0;
+            font-size: 1.2rem; 
+            font-weight: 700; 
+            letter-spacing: 0.5px;
+            color: var(--brand-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 5px;
+            background: rgba(0,0,0,0.04);
+            padding: 4px;
+            border-radius: 30px;
+        }
+        body.dark-mode .nav-menu { background: rgba(255,255,255,0.1); }
+        .nav-link { 
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover { color: var(--brand-color); }
+        .nav-link.active {
+            background-color: var(--brand-color);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(5, 150, 105, 0.3);
+        }
+        
+        .main-content { 
+            padding: 30px; 
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .section-content { 
+            display: block; 
+            margin-bottom: 60px; 
+            scroll-margin-top: 90px;
+            padding-top: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 40px;
+        }
+        .section-content:last-child { border-bottom: none; }
+        
+        h1 { 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            margin-bottom: 25px; 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--card-bg); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow-md); border: 1px solid rgba(0,0,0,0.03); transition: transform 0.2s; }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        .card h3 { margin-top: 0; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 10px; }
+        .card .value { font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -1px; }
+        
+        #genel .kpi-grid .card { 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px;
+        }
+        
+        .kpi-icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .kpi-content { flex: 1; margin-right: 15px; }
+        .kpi-content h3 { margin-bottom: 5px; font-size: 0.8rem; color: var(--text-muted); }
+        .kpi-content .value { font-size: 1.8rem; font-weight: 700; color: var(--text-main); }
+
+        .chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .chart-container { background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-md); height: 350px; border: 1px solid rgba(0,0,0,0.03); }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card-bg); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: var(--text-main); font-size: 0.9rem; transition: background-color 1s ease; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        tr.highlight-row td {
+            background-color: #fffbeb !important;
+        }
+
+        .status-iyi { color: var(--success-color); font-weight: 600; background: rgba(5, 150, 105, 0.1); padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .status-orta { color: var(--warning-color); font-weight: 600; background: rgba(217, 119, 6, 0.1); padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .status-kotu { color: var(--accent-color); font-weight: 600; background: rgba(220, 38, 38, 0.1); padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .status-info { color: var(--brand-color); font-weight: 600; background: rgba(37, 99, 235, 0.1); padding: 4px 8px; border-radius: 4px; display: inline-block; }
+
+        .progress-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(var(--brand-color) calc(var(--percent) * 1%), #e2e8f0 0);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .progress-ring::before {
+            content: "";
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--card-bg);
+        }
+        .progress-value {
+            position: relative;
+            font-weight: bold;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        #map { height: 500px; width: 100%; border-radius: var(--radius); box-shadow: var(--shadow-md); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInCard { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        #genel {
+            position: relative;
+            overflow: hidden;
+        }
+        #genel::before {
+            content: "\f57d";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 600px;
+            color: var(--text-muted);
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        button { font-family: 'Inter', sans-serif; }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto; 
+            padding: 30px;
+            border: 1px solid rgba(0,0,0,0.1);
+            width: 50%; 
+            min-width: 300px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .close-modal:hover { color: var(--text-main); }
+        
+        .btn-map { padding: 8px 15px; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; color: var(--text-main); }
+        .btn-map:hover { background: #f1f5f9; }
+        .btn-map.active { background: var(--brand-color); color: white; border-color: var(--brand-color); }
+
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--card-bg); color: var(--text-main); padding: 15px 20px; border-radius: 8px; box-shadow: var(--shadow-lg); border-left: 5px solid var(--brand-color); display: flex; align-items: center; gap: 15px; animation: slideInRight 0.3s ease-out; min-width: 300px; max-width: 400px; }
+        .toast.success { border-left-color: var(--success-color); }
+        .toast.error { border-left-color: var(--accent-color); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        #scrollTopBtn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 999;
+            font-size: 1.2rem;
+            border: none;
+            outline: none;
+            background-color: var(--brand-color);
+            color: white;
+            cursor: pointer;
+            padding: 12px 16px;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        #scrollTopBtn:hover {
+            background-color: var(--success-color);
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        .custom-tooltip .leaflet-tooltip-content {
+            padding: 0;
+        }
+        .custom-tooltip {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        @keyframes pulse-green {
+            0% { filter: drop-shadow(0 0 0 rgba(16, 185, 129, 0.9)); }
+            70% { filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0)); }
+            100% { filter: drop-shadow(0 0 0 rgba(16, 185, 129, 0)); }
+        }
+        .pulsing-marker {
+            animation: pulse-green 2s infinite;
+        }
+
+        .modern-range {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            outline: none;
+            transition: background 0.3s ease;
+            margin: 10px 0;
+        }
+        
+        .modern-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 6px solid var(--range-color, #2563eb);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+            margin-top: -8px;
+        }
+
+        .modern-range::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border-width: 4px;
+        }
+
+        .modern-range::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 6px solid var(--range-color, #2563eb);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+
+        .modern-range::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border-width: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2><i class="fas fa-chart-line"></i> Beyaz Eşya KDS Paneli</h2>
+        
+        <div class="nav-menu">
+            <a href="#genel" class="nav-link"><i class="fas fa-home"></i> Genel Durum</a>
+            <a href="#tahmin" class="nav-link"><i class="fas fa-brain"></i> Satış Tahmini</a>
+            <a href="#lokasyon" class="nav-link"><i class="fas fa-map-marked-alt"></i> Lokasyon</a>
+            <a href="#lojistik" class="nav-link"><i class="fas fa-truck"></i> Lojistik</a>
+            <a href="#strateji" class="nav-link"><i class="fas fa-chess-knight"></i> Strateji</a>
+            <a href="#urunler" class="nav-link"><i class="fas fa-box-open"></i> Ürünler</a>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 20px; color: var(--text-main);">
+            <button onclick="toggleTheme()" style="background: transparent; border: 1px solid var(--text-muted); color: var(--text-main); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s;"><i class="fas fa-moon"></i></button>
+            
+            <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--text-muted); padding-left: 20px; height: 40px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; font-size: 0.9rem;">Doğa Yılgı</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 500;">Bölge Müdürü</div>
+                </div>
+                <div style="position: relative;">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="Profil" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--brand-color); object-fit: cover;">
+                    <div style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background: var(--success-color); border-radius: 50%; border: 2px solid var(--primary-bg);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="genel" class="section-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h1 style="margin-bottom: 0;"><i class="fas fa-home" style="color: var(--brand-color);"></i> Genel Durum Paneli</h1>
+                <button onclick="downloadPDF()" data-html2canvas-ignore="true" style="padding: 12px 20px; background-color: var(--text-main); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: var(--shadow-sm);">
+                    <i class="fas fa-file-pdf"></i> Raporu PDF İndir
+                </button>
+            </div>
+            <div class="kpi-grid">
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Toplam Bayi</h3>
+                        <div class="value">42</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #ecfdf5; color: var(--brand-color);">
+                        <i class="fas fa-store"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Aylık Satış</h3>
+                        <div class="value">₺1.2M</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #eff6ff; color: #3b82f6;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Toplam Kar</h3>
+                        <div class="value">₺340K</div>
+                        <div style="font-size: 0.8rem; color: var(--success-color); font-weight: 600; margin-top: 4px;">
+                            <i class="fas fa-arrow-up"></i> %12.5
+                        </div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #fffbeb; color: #f59e0b;">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Kar Marjı</h3>
+                        <div class="value">%28.3</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #f5f3ff; color: #8b5cf6;">
+                        <i class="fas fa-percent"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">En Başarılı Bayiler (Son 6 Ay)</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="exportToExcel()" style="padding: 8px 15px; background-color: var(--success-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; box-shadow: var(--shadow-sm); transition: 0.2s;">
+                            <i class="fas fa-file-excel"></i> Excel İndir
+                        </button>
+                        <button onclick="sortDealersBySales()" style="padding: 8px 15px; background-color: var(--brand-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; box-shadow: var(--shadow-sm);">
+                            <i class="fas fa-sort-amount-down"></i> Satışa Göre Sırala
+                        </button>
+                    </div>
+                </div>
+                <table id="salesTable">
+                    <thead>
+                        <tr><th>Bayi Adı</th><th>Şehir</th><th>Aylık Satış</th><th>Kar</th><th>Durum</th><th>Ürünler</th></tr>
+                    </thead>
+                    <tbody id="bayiTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tahmin" class="section-content">
+            <h1><i class="fas fa-brain" style="color: var(--brand-color);"></i> Yapay Zeka Destekli Satış Tahmini</h1>
+            <div class="card" style="margin-bottom: 20px; border-left: 5px solid var(--brand-color); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3>Model Güvenilirlik Skoru</h3>
+                    <div class="value" style="margin-bottom: 5px;">%94.2</div>
+                    <span style="font-size: 0.9rem; color: gray;">(Son 6 aylık doğrulama)</span>
+                </div>
+                <div class="progress-ring" style="--percent: 94.2;">
+                    <div class="progress-value">%94.2</div>
+                </div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-container">
+                    <canvas id="forecastBarChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Bilgi Kartları</h3>
+                    <div id="infoCardsContainer"></div>
+                </div>
+            </div>
+
+            <div class="chart-container" style="height: 300px; margin-bottom: 20px;">
+                <canvas id="forecastTrendLineChart"></canvas>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">Detaylı Tahmin Analizi</h3>
+                    <select id="riskFilter" onchange="filterForecastTable()" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                        <option value="all">Tüm Risk Seviyeleri</option>
+                        <option value="Düşük">Düşük Risk</option>
+                        <option value="Orta">Orta Risk</option>
+                        <option value="Yüksek">Yüksek Risk</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Ürün</th><th>Mevcut Satış</th><th>Tahmini Satış (6 Ay)</th><th>Artış %</th><th>Risk</th><th>Öneri</th></tr>
+                    </thead>
+                    <tbody id="forecastTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="lokasyon" class="section-content">
+            <h1><i class="fas fa-map-marked-alt" style="color: var(--brand-color);"></i> Lokasyon Analizi ve Yeni Bayi Kararı</h1>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 3;">
+                    <div class="map-controls" style="margin-bottom: 10px; display: flex; gap: 10px;">
+                        <button onclick="switchMapLayer('markers')" id="btnMarkers" class="btn-map active"><i class="fas fa-map-marker-alt"></i> Bayi Lokasyonları</button>
+                        <button onclick="switchMapLayer('heat')" id="btnHeat" class="btn-map"><i class="fas fa-circle"></i> Ciro Yoğunluk Haritası (GIS)</button>
+                        <button onclick="toggleAnalysisMode()" id="btnAnalysis" class="btn-map"><i class="fas fa-drafting-compass"></i> Kapsama Alanı Analizi (300km)</button>
+                        <button onclick="clearAnalysis()" class="btn-map" style="background: #e2e8f0; color: #333;"><i class="fas fa-trash"></i> Temizle</button>
+                    </div>
+                    <div id="map"></div>
+                    <div id="cityDemographicsPanel" class="card" style="margin-top: 20px; display: none;">
+                        <h3>Demografik Analiz: <span id="demoCityName"></span></h3>
+                        <div style="display: flex; justify-content: space-around; text-align: center;">
+                            <div>
+                                <i class="fas fa-users fa-2x" style="color: var(--brand-color);"></i>
+                                <p style="margin: 5px 0;">Nüfus</p>
+                                <strong id="demoPopulation" style="font-size: 1.2rem;"></strong>
+                            </div>
+                            <div>
+                                <i class="fas fa-user-clock fa-2x" style="color: var(--accent-color);"></i>
+                                <p style="margin: 5px 0;">Yaş Ortalaması</p>
+                                <strong id="demoAge" style="font-size: 1.2rem;"></strong>
+                            </div>
+                            <div>
+                                <i class="fas fa-wallet fa-2x" style="color: var(--success-color);"></i>
+                                <p style="margin: 5px 0;">Gelir Seviyesi</p>
+                                <strong id="demoIncome" style="font-size: 1.2rem;"></strong>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div style="height: 180px;">
+                                    <h5 style="text-align: center; margin: 0 0 5px 0; color: var(--text-muted); font-size: 0.8rem;">Yaş Dağılımı</h5>
+                                    <canvas id="panelAgeChart"></canvas>
+                                </div>
+                                <div style="height: 180px;">
+                                    <h5 style="text-align: center; margin: 0 0 5px 0; color: var(--text-muted); font-size: 0.8rem;">Gelir Dağılımı</h5>
+                                    <canvas id="panelIncomeChart"></canvas>
+                                </div>
+                            </div>
+                            <div style="margin-top: 15px; padding: 10px; background: #f8fafc; border-left: 4px solid var(--brand-color); border-radius: 4px;">
+                                <h4 style="margin: 0 0 5px 0; font-size: 0.9rem;">📊 Yapay Zeka Analiz Raporu</h4>
+                                <p id="demoAnalysisText" style="margin: 0; font-size: 0.85rem; color: #555;"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                    <div class="card" id="cityInfoCard">
+                        <h3>Şehir Bilgisi</h3>
+                        <p>Harita üzerinden bir şehre tıklayın.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Şehir Durum Tablosu</h3>
+                        <div style="overflow-y: auto; max-height: 300px;">
+                            <table style="font-size: 0.8rem;">
+                                <thead><tr><th>Şehir</th><th>Pazar Doygunluğu</th><th>Öneri</th></tr></thead>
+                                <tbody id="cityStatusTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3><i class="fas fa-hourglass-half" style="color: var(--brand-color);"></i> Açılış Bekleyen Bayiler (Gelecek 12 Ay)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Şehir</th>
+                            <th>Planlanan Açılış Tarihi</th>
+                            <th>Durum</th>
+                            <th>Kalan Süre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingDealersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="lojistik" class="section-content">
+            <h1><i class="fas fa-truck" style="color: var(--brand-color);"></i> Lojistik Yönetimi</h1>
+            <div class="chart-row">
+                <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;"><i class="fas fa-chess-rook" style="color: var(--brand-color);"></i> Stratejik Lojistik Planlama (6 Aylık)</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fas fa-calendar-alt"></i> Hedef Dönem: 2026 Q2-Q3</span>
+                    </div>
+
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Hedef Şehir Seçimi</label>
+                            <span style="font-size: 0.85rem; color: var(--brand-color); font-weight: bold;"><i class="fas fa-box"></i> Toplu Hacim: <span id="totalVolume">15.450</span> Adet</span>
+                        </div>
+                        <select id="logisticsCitySelect" onchange="updateLogistics()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: white; font-size: 0.95rem;">
+                            <option value="Istanbul">İstanbul - Avrupa Yakası</option>
+                            <option value="Ankara">Ankara - Merkez Depo</option>
+                            <option value="Izmir">İzmir - Bölge Bayi</option>
+                            <option value="Bursa">Bursa - Güney Marmara</option>
+                            <option value="Antalya">Antalya - Akdeniz Şube</option>
+                            <option value="Adana">Adana - Çukurova Bölge</option>
+                            <option value="Trabzon">Trabzon - Karadeniz Şube</option>
+                            <option value="Gaziantep">Gaziantep - Güneydoğu</option>
+                            <option value="Konya">Konya - İç Anadolu</option>
+                            <option value="Diyarbakir">Diyarbakır - Doğu Bölge</option>
+                            <option value="Samsun">Samsun - Orta Karadeniz</option>
+                            <option value="Afyon">Afyon - Ege Geçiş</option>
+                            <option value="Sivas">Sivas - Doğu Anadolu</option>
+                        </select>
+                    </div>
+
+                    <div style="position: relative; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid #e2e8f0;">
+                        <div id="miniMap" style="height: 350px; width: 100%; z-index: 1;"></div>
+                        <div style="position: absolute; bottom: 10px; left: 10px; z-index: 400; background: rgba(255,255,255,0.9); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <i class="fas fa-network-wired" style="color: var(--brand-color);"></i> Çok Modlu (Multimodal) Ağ Analizi
+                        </div>
+                    </div>
+
+                    <div id="logisticsDetails" style="display: grid; grid-template-columns: 1fr; gap: 10px; font-size: 0.9rem; color: var(--text-muted);"></div>
+
+                    <div style="padding: 10px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Lansman Tarihine Uygunluk (Deadline: 6 Ay)</div>
+                        <div style="width: 100%; background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                            <div id="deadlineProgress" style="width: 60%; height: 100%; background: var(--success-color); transition: width 0.5s;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 5px; color: #64748b;">
+                            <span>Bugün</span>
+                            <span id="deadlineText" style="font-weight: bold; color: var(--success-color);">Zamanında Yetişiyor</span>
+                            <span>Lansman Günü</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div style="position: relative; margin-bottom: 20px; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
+                        <img id="logisticsCityImage" src="" style="width: 100%; height: 200px; object-fit: cover; display: none;">
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px 15px 10px;">
+                            <h3 id="logisticsCityOverlayName" style="margin: 0; color: white; font-size: 1.4rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></h3>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="width: 50px; height: 50px; background: #ecfdf5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i id="logisticsFirmIcon" class="fas fa-warehouse" style="color: var(--brand-color); font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h4 id="logisticsFirmName" style="margin: 0; color: var(--text-main); font-size: 1rem;">Depo ve Stok Yönetimi</h4>
+                                <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Bölgesel Dağıtım Merkezi</div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div style="background: #f8fafc; padding: 10px; border-radius: 6px; text-align: center;"><div style="font-size: 0.8rem; color: #64748b;">Doluluk</div><div style="font-weight: bold; color: var(--brand-color);">%78</div></div>
+                            <div style="background: #f8fafc; padding: 10px; border-radius: 6px; text-align: center;"><div style="font-size: 0.8rem; color: #64748b;">Kapasite</div><div style="font-weight: bold; color: var(--text-main);">50K</div></div>
+                        </div>
+
+                        <button onclick="confirmShipment()" style="background: var(--brand-color); color: white; border: none; padding: 12px; cursor: pointer; border-radius: 8px; width: 100%; font-weight: 600; font-size: 1rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);">
+                            <i class="fas fa-handshake"></i> Stratejik Planı Onayla ve Başlat
+                        </button>
+                    </div>
+                    <h3>Maliyet Verimlilik Analizi</h3>
+                    <div id="efficiencyInfo" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #f0fdf4; padding: 15px; border-radius: 8px; border-left: 4px solid var(--success-color);">
+                        <i class="fas fa-piggy-bank fa-2x" style="color: var(--success-color);"></i>
+                        <div>
+                            <strong style="font-size: 1.1rem; color: var(--text-main);">%45 Tasarruf</strong>
+                            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">Erken planlama ve toplu taşıma sayesinde.</p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="font-size: 0.9rem; margin: 0 0 10px 0;">Birim Taşıma Maliyeti (Adet Başı)</h4>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span style="width: 80px; font-size: 0.8rem;">Acil (Tır)</span>
+                            <div style="flex: 1; background: #f1f5f9; height: 8px; border-radius: 4px; margin: 0 10px;">
+                                <div style="width: 100%; height: 100%; background: var(--accent-color); border-radius: 4px;"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: bold;">₺120</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="width: 80px; font-size: 0.8rem;">Stratejik</span>
+                            <div style="flex: 1; background: #f1f5f9; height: 8px; border-radius: 4px; margin: 0 10px;">
+                                <div style="width: 55%; height: 100%; background: var(--success-color); border-radius: 4px;"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: bold;">₺65</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">Planlanan Stratejik Sevkiyatlar</h3>
+                    <select id="shipmentFilter" onchange="renderShipmentsTable()" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd; font-size: 0.9rem;">
+                        <option value="all">Tüm Durumlar</option>
+                        <option value="Onaylandı">Onaylandı</option>
+                        <option value="Planlanıyor">Planlanıyor</option>
+                    </select>
+                </div>
+                <table>
+                    <thead><tr><th>Plan ID</th><th>Hedef Bölge</th><th>Yöntem</th><th>Durum</th><th>Hedef Tarih</th></tr></thead>
+                    <tbody id="shipmentTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="strateji" class="section-content">
+            <h1><i class="fas fa-chess-knight" style="color: var(--brand-color);"></i> Ürün Stratejisi ve Lansman Kararı</h1>
+            
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Ürün Karşılaştırma ve Analiz Paneli</h3>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fas fa-balance-scale"></i> Detaylı Kıyaslama</span>
+                </div>
+                
+                <div style="display: flex; gap: 20px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="flex: 1;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Ana Ürün (Hedef)</label>
+                        <select id="strategyProductSelect" onchange="updateStrategyChart()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: white; font-size: 0.95rem;">
+                            <option value="bulasik">Eco-Smart Bulaşık M.</option>
+                            <option value="buzdolabi">No-Frost XL Buzdolabı</option>
+                            <option value="kurutma">Hibrit Kurutma M.</option>
+                            <option value="klima">Inverter Klima 18000</option>
+                            <option value="airfryer">Air Fryer XXL</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: center; padding-top: 20px;">
+                        <div style="background: white; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #cbd5e1; color: var(--text-muted); font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">VS</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Kıyaslanan Ürün</label>
+                        <select id="strategyProductSelect2" onchange="updateStrategyChart()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: white; font-size: 0.95rem;">
+                            <option value="buzdolabi" selected>No-Frost XL Buzdolabı</option>
+                            <option value="bulasik">Eco-Smart Bulaşık M.</option>
+                            <option value="kurutma">Hibrit Kurutma M.</option>
+                            <option value="klima">Inverter Klima 18000</option>
+                            <option value="airfryer">Air Fryer XXL</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(to right bottom, #ffffff, #f8fafc); padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; right: 0; width: 150px; height: 150px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(255,255,255,0) 70%); pointer-events: none;"></div>
+
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; background: #eff6ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #2563eb;">
+                            <i class="fas fa-flask fa-lg"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; color: #1e293b;">"What-If" Senaryo Simülasyonu</h3>
+                            <span style="font-size: 0.85rem; color: #64748b;">Değişken piyasa koşullarının etkisini analiz edin</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+                                <label for="scenarioSlider" style="font-weight: 600; font-size: 0.9rem; color: #334155; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-dollar-sign" style="color: #2563eb;"></i> Döviz Kuru
+                                </label>
+                                <span id="scenarioValue" style="background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; border: 1px solid #dbeafe;">+0%</span>
+                            </div>
+                            <input type="range" id="scenarioSlider" min="-20" max="50" value="0" oninput="updateScenario()" class="modern-range" style="--range-color: #2563eb;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-top: 5px;">
+                                <span>-20%</span>
+                                <span>0%</span>
+                                <span>+50%</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+                                <label for="scenarioSliderMaterial" style="font-weight: 600; font-size: 0.9rem; color: #334155; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-cubes" style="color: #f59e0b;"></i> Hammadde Maliyeti
+                                </label>
+                                <span id="scenarioValueMaterial" style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; border: 1px solid #fef3c7;">+0%</span>
+                            </div>
+                            <input type="range" id="scenarioSliderMaterial" min="0" max="50" value="0" oninput="updateScenario()" class="modern-range" style="--range-color: #f59e0b;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-top: 5px;">
+                                <span>0%</span>
+                                <span>+25%</span>
+                                <span>+50%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-info-circle" style="color: #64748b;"></i>
+                        <span style="font-size: 0.85rem; color: #475569;">Simülasyon sonuçları anlık olarak aşağıdaki grafiklere ve yönetici özetine yansıtılır.</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; position: relative; background: white; box-shadow: var(--shadow-sm);">
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--brand-color);"></div>
+                        <img id="productImage1" src="" style="width: 100%; height: 150px; object-fit: contain; margin-bottom: 15px;">
+                        <h4 id="productName1" style="margin: 0 0 10px 0; color: var(--text-main); font-size: 1.1rem;"></h4>
+                        <div id="productFeatures1" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;"></div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1px solid #bbf7d0; flex: 1;">
+                            <h4 style="margin: 0 0 15px 0; color: var(--success-color); font-size: 1rem; display: flex; align-items: center; gap: 8px;"><i class="fas fa-clipboard-check"></i> Yönetici Özeti</h4>
+                            <ul id="strategySummaryList" style="padding-left: 20px; margin: 0; font-size: 0.9rem; color: #334155; line-height: 1.6;"></ul>
+                        </div>
+                        <button onclick="launchProduct()" style="background: var(--brand-color); color: white; border: none; padding: 15px; width: 100%; cursor: pointer; border-radius: 8px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-md); font-size: 1rem;">
+                            <i class="fas fa-rocket"></i> Lansmanı Başlat
+                        </button>
+                    </div>
+
+                    <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; position: relative; background: white; box-shadow: var(--shadow-sm);">
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--accent-color);"></div>
+                        <img id="productImage2" src="" style="width: 100%; height: 150px; object-fit: contain; margin-bottom: 15px;">
+                        <h4 id="productName2" style="margin: 0 0 10px 0; color: var(--text-main); font-size: 1.1rem;"></h4>
+                        <div id="productFeatures2" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card" style="height: 380px; display: flex; flex-direction: column;">
+                    <h3>Stratejik Uygunluk Analizi</h3>
+                    <div style="flex: 1; position: relative;">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <p id="radarCommentary" style="margin-top: 10px; font-size: 0.85rem; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px; border-left: 3px solid var(--success-color);"></p>
+                </div>
+                <div class="card" style="height: 380px; display: flex; flex-direction: column;">
+                    <h3>Satış Trendi Simülasyonu</h3>
+                    <div style="flex: 1; position: relative;">
+                        <canvas id="strategyTrendChart"></canvas>
+                    </div>
+                    <p id="strategyDescription" style="margin-top: 10px; font-size: 0.85rem; color: #666; background: #f8f9fa; padding: 8px; border-radius: 4px; border-left: 3px solid var(--brand-color);"></p>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3><i class="fas fa-tasks" style="color: var(--brand-color);"></i> Satışa Sürülen Ürünlerin Takibi</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ürün Adı</th>
+                            <th>Lansman Tarihi</th>
+                            <th>Durum</th>
+                            <th>Satış Performansı (Hedef)</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="launchedProductsTableBody">
+                        <tr>
+                            <td>Akıllı Buzdolabı X1</td>
+                            <td>12.01.2024</td>
+                            <td><span style="color: var(--success-color); font-weight: bold;"><i class="fas fa-check-circle"></i> Satışta</span></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex: 1; background: #ecf0f1; height: 8px; border-radius: 4px;">
+                                        <div style="width: 75%; height: 100%; background: var(--brand-color); border-radius: 4px;"></div>
+                                    </div>
+                                    <span style="font-size: 0.85rem; font-weight: bold;">%75</span>
+                                </div>
+                            </td>
+                            <td><button onclick="openProductModal('Akıllı Buzdolabı X1', '12.01.2024', '<span style=\'color: var(--success-color); font-weight: bold;\'><i class=\'fas fa-check-circle\'></i> Satışta</span>', '%75')" style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; color: #555;"><i class="fas fa-eye"></i> Detay</button></td>
+                        </tr>
+                        <tr>
+                            <td>Ultra Sessiz Çamaşır Mak.</td>
+                            <td>05.03.2024</td>
+                            <td><span style="color: var(--warning-color); font-weight: bold;"><i class="fas fa-tag"></i> Kampanyada</span></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex: 1; background: #ecf0f1; height: 8px; border-radius: 4px;">
+                                        <div style="width: 45%; height: 100%; background: var(--accent-color); border-radius: 4px;"></div>
+                                    </div>
+                                    <span style="font-size: 0.85rem; font-weight: bold;">%45</span>
+                                </div>
+                            </td>
+                            <td><button onclick="openProductModal('Ultra Sessiz Çamaşır Mak.', '05.03.2024', '<span style=\'color: var(--warning-color); font-weight: bold;\'><i class=\'fas fa-tag\'></i> Kampanyada</span>', '%45')" style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; color: #555;"><i class="fas fa-eye"></i> Detay</button></td>
+                        </tr>
+                        <tr>
+                            <td>Robot Süpürge Pro</td>
+                            <td>20.04.2024</td>
+                            <td><span style="color: #7f8c8d; font-weight: bold;"><i class="fas fa-box-open"></i> Stok Tükendi</span></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex: 1; background: #ecf0f1; height: 8px; border-radius: 4px;">
+                                        <div style="width: 100%; height: 100%; background: var(--success-color); border-radius: 4px;"></div>
+                                    </div>
+                                    <span style="font-size: 0.85rem; font-weight: bold;">%100</span>
+                                </div>
+                            </td>
+                            <td><button onclick="openProductModal('Robot Süpürge Pro', '20.04.2024', '<span style=\'color: #7f8c8d; font-weight: bold;\'><i class=\'fas fa-box-open\'></i> Stok Tükendi</span>', '%100')" style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; color: #555;"><i class="fas fa-eye"></i> Detay</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="urunler" class="section-content">
+            <h1><i class="fas fa-box-open" style="color: var(--brand-color);"></i> Ürün Yönetimi ve Bayi Durumu</h1>
+            
+            <div class="kpi-grid">
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Aktif Ürün Çeşidi</h3>
+                        <div class="value">14</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #ecfdf5; color: var(--brand-color);">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Ort. Arıza Oranı</h3>
+                        <div class="value" style="color: var(--accent-color);">%2.4</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #fef2f2; color: var(--accent-color);">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Müşteri Memnuniyeti</h3>
+                        <div class="value">4.8/5</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #fffbeb; color: var(--warning-color);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="kpi-content">
+                        <h3>Bekleyen Servis</h3>
+                        <div class="value">128</div>
+                    </div>
+                    <div class="kpi-icon-box" style="background: #eff6ff; color: #3b82f6;">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;"><i class="fas fa-globe-americas" style="color: var(--brand-color);"></i> CBS Destekli İklim ve Stok Analizi</h3>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fas fa-satellite-dish"></i> Canlı Hava Durumu Entegrasyonu</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                    Bölgesel sıcaklık ve nem verilerine (CBS) göre, ürünlerin çalışma performansını etkileyebilecek riskler analiz edilmiş ve proaktif stok önerileri oluşturulmuştur.
+                </p>
+                <table id="climateAnalysisTable">
+                    <thead>
+                        <tr>
+                            <th>Lokasyon (Şehir/Bayi)</th>
+                            <th>CBS Verisi (İklim)</th>
+                            <th>Riskli Ürün Grubu</th>
+                            <th>Tespit Edilen Risk</th>
+                            <th>Önerilen Aksiyon</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="climateAnalysisTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-container">
+                    <h3 style="margin-top: 0; margin-bottom: 10px;">Ürün Bazlı Arıza Analizi</h3>
+                    <canvas id="serviceFailureChart"></canvas>
+                </div>
+                <div class="card" style="overflow-y: auto; max-height: 350px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: var(--accent-color);"><i class="fas fa-exclamation-triangle"></i> Kritik Servis Bildirimleri</h3>
+                    <div id="serviceAlertsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;"><i class="fas fa-store-alt" style="color: var(--brand-color);"></i> Bayi Performans ve Sağlık Takibi</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fas fa-info-circle"></i> Stok ve Müşteri Memnuniyeti Bazlı</span>
+                    </div>
+                </div>
+                <table id="dealerHealthTable">
+                    <thead>
+                        <tr>
+                            <th>Bayi Adı</th>
+                            <th>Lokasyon</th>
+                            <th>Stok Sağlığı</th>
+                            <th>Aktif Şikayet</th>
+                            <th>Genel Sağlık Skoru</th>
+                            <th>Durum</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dealerHealthTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px; display: none;" id="improvementTrackingCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;"><i class="fas fa-clipboard-list" style="color: var(--warning-color);"></i> Aktif İyileştirme Planları Takibi</h3>
+                </div>
+                <table id="improvementTrackingTable">
+                    <thead>
+                        <tr>
+                            <th>Bayi Adı</th>
+                            <th>Başlangıç Tarihi</th>
+                            <th>Hedef Skor</th>
+                            <th>İlerleme Durumu</th>
+                            <th>Kalan Süre</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="improvementTrackingTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Aktif Ürün Listesi (Veritabanı: satis_urunleri)</h3>
+                    <button onclick="fetchSatisUrunleri()" style="padding: 8px 15px; background: var(--brand-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;"><i class="fas fa-sync"></i> Listeyi Yenile</button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                    Aşağıdaki liste, halihazırda bayilerde satışta olan ve stokları bulunan ürünleri göstermektedir. Lansman aşamasındaki ürünler "Strateji" sekmesinde yer almaktadır.
+                </p>
+                <table id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Ürün ID</th>
+                            <th>Ürün Adı</th>
+                            <th>Kategori</th>
+                            <th>Birim Fiyat</th>
+                            <th>Toplam Stok</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="productDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalProductName" style="margin-top: 0; color: var(--brand-color);">Ürün Detayı</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">Lansman Tarihi</p>
+                    <div id="modalLaunchDate" style="font-weight: 600;"></div>
+                </div>
+                <div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">Güncel Durum</p>
+                    <div id="modalStatus"></div>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px;">Satış Performansı</p>
+                <div id="modalPerformance" style="font-weight: 600; font-size: 1.1rem;"></div>
+            </div>
+            <div id="modalExtraDetails" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;"></div>
+            <div style="margin-top: 25px; text-align: right;">
+                <button onclick="closeModal()" style="padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--text-main);">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dealerStockModal" class="modal">
+        <div class="modal-content" style="width: 60%;">
+            <span class="close-modal" onclick="closeDealerStockModal()">&times;</span>
+            <h2 id="stockModalTitle" style="margin-top: 0; color: var(--brand-color);">Bayi Stok Durumu</h2>
+            <div style="margin-top: 20px;">
+                <table id="dealerStockTable">
+                    <thead>
+                        <tr>
+                            <th>Ürün Adı</th>
+                            <th>Kategori</th>
+                            <th>Stok Adedi</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dealerStockTableBody"></tbody>
+                </table>
+            </div>
+            <div style="margin-top: 25px; text-align: right;">
+                <button onclick="closeDealerStockModal()" style="padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--text-main);">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="improvementPlanModal" class="modal">
+        <div class="modal-content" style="width: 60%;">
+            <span class="close-modal" onclick="closeImprovementPlanModal()">&times;</span>
+            <h2 id="planModalTitle" style="margin-top: 0; color: var(--brand-color);"></h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: -15px; margin-bottom: 25px;">
+                Yapay zeka, bayinin mevcut zayıf yönlerini analiz ederek 6 aylık bir iyileştirme projeksiyonu oluşturmuştur.
+            </p>
+            <table id="improvementPlanTable">
+                <thead>
+                    <tr>
+                        <th>Performans Metriği</th>
+                        <th>Mevcut Durum</th>
+                        <th>6 Aylık Hedef</th>
+                        <th>Beklenen Değişim</th>
+                    </tr>
+                </thead>
+                <tbody id="improvementPlanTableBody"></tbody>
+            </table>
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="closeImprovementPlanModal()" style="padding: 10px 20px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--text-main);">İptal</button>
+                <button onclick="confirmImprovementPlan()" style="padding: 10px 20px; background: var(--brand-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Planı Onayla ve Takibe Al</button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="scrollToTop()" id="scrollTopBtn" title="Yukarı Çık"><i class="fas fa-arrow-up"></i></button>
+
+    <div id="dbConnectionError" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px);">
+        <div style="background: var(--card-bg); padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <i class="fas fa-database fa-3x" style="color: var(--accent-color); margin-bottom: 20px;"></i>
+            <h2 style="margin: 0 0 10px 0; color: var(--text-main);">Veritabanı Bağlantısı Koptu</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px;">Sunucu ile iletişim kurulamıyor. Lütfen bağlantınızı kontrol edin.</p>
+            <button onclick="retryConnection()" style="background: var(--brand-color); color: white; border: none; padding: 12px 25px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; margin: 0 auto;">
+                <i class="fas fa-sync-alt"></i> Yeniden Bağlan
+            </button>
+        </div>
+    </div>
+
+    <script>
+        
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran'],
+                datasets: [{
+                    label: 'Satış (TL)',
+                    data: [100000, 120000, 115000, 140000, 160000, 180000],
+                    borderColor: '#2563eb',
+                    tension: 0.4
+                }, {
+                    label: 'Kar (TL)',
+                    data: [20000, 25000, 22000, 35000, 40000, 48000],
+                    borderColor: '#059669',
+                    tension: 0.4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Son 6 Aylık Satış ve Kar Trendi' } } }
+        });
+
+        const ctxPie = document.getElementById('pieChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['Buzdolabı', 'Çamaşır Mak.', 'Bulaşık Mak.', 'Fırın', 'Klima', 'Küçük Ev Aletleri'],
+                datasets: [{
+                    data: [35, 20, 15, 10, 12, 8],
+                    backgroundColor: ['#2563eb', '#ef4444', '#f59e0b', '#8b5cf6', '#059669', '#e11d48']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Ürün Dağılımı' } } }
+        });
+
+        const ctxForecast = document.getElementById('forecastBarChart').getContext('2d');
+        
+        const gradientCurrent = ctxForecast.createLinearGradient(0, 0, 0, 300);
+        gradientCurrent.addColorStop(0, '#94a3b8');
+        gradientCurrent.addColorStop(1, '#cbd5e1');
+
+        const gradientForecast = ctxForecast.createLinearGradient(0, 0, 0, 300);
+        gradientForecast.addColorStop(0, '#2563eb');
+        gradientForecast.addColorStop(1, '#60a5fa');
+
+        window.forecastBarChart = new Chart(ctxForecast, {
+            type: 'bar',
+            data: {
+                labels: ['Eco-Smart Bulaşık M.', 'No-Frost XL Buzdolabı', 'Hibrit Kurutma M.', 'Inverter Klima', 'Air Fryer XXL'],
+                datasets: [{
+                    label: 'Mevcut Satış',
+                    data: [320, 800, 150, 450, 600],
+                    backgroundColor: gradientCurrent,
+                    borderRadius: 8,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7,
+                    hoverBackgroundColor: '#64748b'
+                }, {
+                    label: '6 Ay Sonraki Tahmin (AI)',
+                    data: [550, 850, 400, 600, 950],
+                    backgroundColor: gradientForecast,
+                    borderRadius: 8,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7,
+                    hoverBackgroundColor: '#1d4ed8'
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            font: { family: "'Inter', sans-serif", size: 12, weight: 500 },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        padding: 15,
+                        titleFont: { size: 13, family: "'Inter', sans-serif", weight: 600 },
+                        bodyFont: { size: 13, family: "'Inter', sans-serif" },
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                return ' ' + context.dataset.label + ': ' + context.parsed.y + ' Adet';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f1f5f9',
+                            borderDash: [5, 5],
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: { family: "'Inter', sans-serif", size: 11 },
+                            color: '#64748b',
+                            padding: 10
+                        },
+                        border: { display: false }
+                    },
+                    x: {
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
+                            color: '#475569'
+                        },
+                        border: { display: false }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        const ctxForecastLine = document.getElementById('forecastTrendLineChart').getContext('2d');
+        window.forecastTrendLineChart = new Chart(ctxForecastLine, {
+            type: 'line',
+            data: {
+                labels: ['Ay 1', 'Ay 2', 'Ay 3', 'Ay 4', 'Ay 5', 'Ay 6'],
+                datasets: [
+                    { label: 'Eco-Smart Bulaşık M.', data: [380, 420, 480, 550, 650, 820], borderColor: '#2563eb', fill: false },
+                    { label: 'No-Frost XL Buzdolabı', data: [820, 830, 840, 850, 860, 900], borderColor: '#ef4444', fill: false },
+                    { label: 'Hibrit Kurutma M.', data: [250, 300, 350, 400, 500, 600], borderColor: '#f59e0b', fill: false },
+                    { label: 'Inverter Klima', data: [400, 420, 450, 500, 580, 650], borderColor: '#3b82f6', fill: false },
+                    { label: 'Air Fryer XXL', data: [550, 600, 700, 800, 900, 1000], borderColor: '#e11d48', fill: false }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: { 
+                    title: { display: true, text: 'Top 3 Ürün 6 Aylık Trend Tahmini' },
+                    tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.95)',
+                        padding: 15,
+                        cornerRadius: 8,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            title: function(context) {
+                                return '📅 Dönem: ' + context[0].label;
+                            },
+                            label: function(context) {
+                                return ' ' + context.dataset.label + ': ' + context.parsed.y + ' Adet';
+                            },
+                            afterBody: function(context) {
+                                let total = 0;
+                                context.forEach((item) => {
+                                    total += item.parsed.y;
+                                });
+                                return '\n📊 Toplam Tahmin: ' + total + ' Adet';
+                            },
+                            footer: function(tooltipItems) {
+                                return '\n✅ Güvenilirlik: %94.2\n🤖 Model: LSTM-Forecast v2';
+                            }
+                        }
+                    }
+                } 
+            }
+        });
+
+        const ctxRadar = document.getElementById('radarChart').getContext('2d');
+        let strategyChart = new Chart(ctxRadar, {
+            type: 'radar',
+            data: {
+                labels: ['Teknoloji', 'Pazar Doygunluğu', 'Maliyet', 'Rekabet', 'Lojistik Kolaylığı', 'Müşteri Talebi'],
+                datasets: [{
+                    label: 'Eco-Smart Bulaşık Makinesi',
+                    data: [9, 4, 6, 8, 7, 9],
+                    fill: true,
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    borderColor: '#2563eb',
+                    pointBackgroundColor: '#2563eb'
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: { 
+                    r: { 
+                        min: 0, 
+                        max: 10,
+                        pointLabels: {
+                            color: ['#64748b', '#64748b', '#64748b', '#64748b', '#64748b', '#ef4444'], // Müşteri Talebi kırmızı
+                            font: { size: 12, weight: (ctx) => ctx.index === 5 ? 'bold' : 'normal' }
+                        },
+                        angleLines: {
+                            color: ['#e2e8f0', '#e2e8f0', '#e2e8f0', '#e2e8f0', '#e2e8f0', 'rgba(239, 68, 68, 0.5)'] // Eksen çizgisi de kırmızımsı
+                        }
+                    } 
+                }
+            }
+        });
+
+        let bayiler = [];
+
+        function renderBayiTable() {
+            const tbody = document.getElementById('bayiTableBody');
+            tbody.innerHTML = '';
+            bayiler.forEach(b => {
+                const row = `<tr>
+                    <td>${b.ad}</td>
+                    <td>${b.sehir}</td>
+                    <td>${b.satis}</td>
+                    <td>${b.kar}</td>
+                    <td class="status-${b.durum}">${b.durum.toUpperCase()}</td>
+                    <td><button onclick="openDealerStockModal('${b.ad}')" style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; color: #555; transition: 0.2s;"><i class="fas fa-boxes"></i> Stok Görüntüle</button></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function fetchBayiler() {
+            fetch('/api/bayiler')
+                .then(response => response.json())
+                .then(data => {
+                    bayiler = data.map(b => ({
+                        ad: b.bayi_adi,
+                        sehir: b.sehir,
+                        satis: '₺' + Number(b.satis_miktari).toLocaleString('tr-TR'),
+                        kar: '₺' + Number(b.kar_miktari).toLocaleString('tr-TR'),
+                        durum: b.durum
+                    }));
+                    renderBayiTable();
+                    renderDealerHealthTable();
+                })
+                .catch(err => console.error('Bayi verisi çekilemedi:', err));
+        }
+
+        fetchBayiler();
+
+        function sortDealersBySales() {
+            bayiler.sort((a, b) => {
+                return parseInt(b.satis.replace(/[^0-9]/g, '')) - parseInt(a.satis.replace(/[^0-9]/g, ''));
+            });
+            renderBayiTable();
+        }
+
+        function renderDealerHealthTable() {
+            const tbody = document.getElementById('dealerHealthTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const dealersList = bayiler.length > 0 ? bayiler : [
+                { ad: 'İstanbul Merkez Bayi', sehir: 'İstanbul', durum: 'iyi' },
+                { ad: 'Ankara Bölge Bayi', sehir: 'Ankara', durum: 'iyi' },
+                { ad: 'İzmir Şube', sehir: 'İzmir', durum: 'iyi' },
+                { ad: 'Bursa Yetkili Satıcı', sehir: 'Bursa', durum: 'orta' },
+                { ad: 'Gaziantep Ticaret', sehir: 'Gaziantep', durum: 'kotu' }
+            ];
+
+            dealersList.forEach(d => {
+                let stockHealth, complaints;
+
+                if (d.durum === 'iyi') {
+                    stockHealth = Math.floor(Math.random() * 15) + 85;
+                    complaints = Math.floor(Math.random() * 3);
+                } else if (d.durum === 'orta') {
+                    stockHealth = Math.floor(Math.random() * 25) + 55;
+                    complaints = Math.floor(Math.random() * 4) + 4;
+                } else {
+                    stockHealth = Math.floor(Math.random() * 30) + 20;
+                    complaints = Math.floor(Math.random() * 8) + 8;
+                }
+                
+                let healthScore = 100 - (complaints * 4) - ((100 - stockHealth) * 0.1);
+                healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+
+                let statusHtml = '';
+                let actionHtml = '<span style="color: var(--text-muted); font-size: 0.8rem;">-</span>';
+
+                if (healthScore >= 80) {
+                    statusHtml = '<span class="status-iyi">Mükemmel</span>';
+                } else if (healthScore >= 60) {
+                    statusHtml = '<span class="status-orta">İdare Eder</span>';
+                } else {
+                    statusHtml = '<span class="status-kotu">Riskli</span>';
+                    const dealerNameEscaped = d.ad.replace(/'/g, "\\'");
+                    actionHtml = `<button onclick="assignImprovementPlan('${dealerNameEscaped}', ${stockHealth}, ${complaints}, ${healthScore})" style="padding: 6px 10px; background: var(--accent-color); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: 0.2s; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);"><i class="fas fa-file-medical-alt"></i> Plan Ata</button>`;
+                }
+
+                let stockColor = stockHealth > 80 ? 'var(--success-color)' : (stockHealth > 60 ? 'var(--warning-color)' : 'var(--accent-color)');
+
+                const row = `<tr>
+                    <td><span style="font-weight: 600;">${d.ad}</span></td>
+                    <td>${d.sehir}</td>
+                    <td><div style="display: flex; align-items: center; gap: 10px;"><div style="flex: 1; background: #e2e8f0; height: 6px; border-radius: 3px; width: 80px;"><div style="width: ${stockHealth}%; height: 100%; background: ${stockColor}; border-radius: 3px;"></div></div><span style="font-size: 0.85rem;">%${stockHealth}</span></div></td>
+                    <td>${complaints > 5 ? `<span style="color: var(--accent-color); font-weight: bold;">${complaints}</span>` : complaints}</td>
+                    <td><div style="font-weight: bold; color: var(--text-main);">${healthScore}/100</div></td>
+                    <td>${statusHtml}</td>
+                    <td>${actionHtml}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        let currentDealerForPlan = null;
+        let currentPlanTargetScore = 0;
+
+        function assignImprovementPlan(dealerName, currentStock, currentComplaints, currentScore) {
+            currentDealerForPlan = dealerName;
+
+            const targetStock = Math.min(100, currentStock + 40);
+            const targetComplaints = Math.max(0, Math.floor(currentComplaints / 3));
+            let targetScore = 100 - (targetComplaints * 4) - ((100 - targetStock) * 0.1);
+            targetScore = Math.max(0, Math.min(100, Math.round(targetScore)));
+            
+            currentPlanTargetScore = targetScore;
+
+            let currentStatusHtml = '<span class="status-kotu">Riskli</span>';
+            let targetStatusHtml = '';
+            if (targetScore >= 80) targetStatusHtml = '<span class="status-iyi">Mükemmel</span>';
+            else if (targetScore >= 60) targetStatusHtml = '<span class="status-orta">İdare Eder</span>';
+            else targetStatusHtml = '<span class="status-kotu">Riskli</span>';
+
+            const tbody = document.getElementById('improvementPlanTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td><strong>Stok Sağlığı</strong></td>
+                    <td><span style="color: var(--accent-color); font-weight: bold;">%${currentStock}</span></td>
+                    <td><span style="color: var(--success-color); font-weight: bold;">%${targetStock}</span></td>
+                    <td><i class="fas fa-arrow-up" style="color: var(--success-color);"></i> %${targetStock - currentStock} Artış</td>
+                </tr>
+                <tr>
+                    <td><strong>Aktif Şikayet Sayısı</strong></td>
+                    <td><span style="color: var(--accent-color); font-weight: bold;">${currentComplaints}</span></td>
+                    <td><span style="color: var(--success-color); font-weight: bold;">${targetComplaints}</span></td>
+                    <td><i class="fas fa-arrow-down" style="color: var(--success-color);"></i> ${currentComplaints - targetComplaints} Azalma</td>
+                </tr>
+                <tr>
+                    <td><strong>Genel Sağlık Skoru</strong></td>
+                    <td><span style="color: var(--accent-color); font-weight: bold;">${currentScore}/100</span></td>
+                    <td><span style="color: var(--success-color); font-weight: bold;">${targetScore}/100</span></td>
+                    <td><i class="fas fa-arrow-up" style="color: var(--success-color);"></i> +${targetScore - currentScore} Puan</td>
+                </tr>
+                <tr>
+                    <td><strong>Genel Durum</strong></td>
+                    <td>${currentStatusHtml}</td>
+                    <td>${targetStatusHtml}</td>
+                    <td><i class="fas fa-chart-line" style="color: var(--success-color);"></i> İyileşme</td>
+                </tr>
+            `;
+
+            document.getElementById('planModalTitle').innerText = `${dealerName} - İyileştirme Planı Analizi`;
+            document.getElementById('improvementPlanModal').style.display = 'block';
+        }
+
+        function exportToExcel() {
+            const table = document.getElementById('salesTable');
+            let csv = [];
+            const rows = table.querySelectorAll("tr");
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) {
+                    let text = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/"/g, '""');
+                    row.push('"' + text + '"');
+                }
+                csv.push(row.join(","));        
+            }
+
+            const csvFile = new Blob(["\uFEFF" + csv.join("\n")], {type: "text/csv;charset=utf-8;"});
+            const downloadLink = document.createElement("a");
+            downloadLink.download = "Bayi_Satis_Raporu.csv";
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            showToast('Tablo Excel (CSV) formatında indirildi.', 'success');
+        }
+
+        function closeImprovementPlanModal() {
+            document.getElementById('improvementPlanModal').style.display = 'none';
+            currentDealerForPlan = null;
+        }
+
+        function confirmImprovementPlan() {
+            if (currentDealerForPlan) {
+                addImprovementPlanToTracker(currentDealerForPlan, currentPlanTargetScore);
+
+                showToast(`<b>${currentDealerForPlan}</b> için 6 aylık iyileştirme planı onaylandı ve takibe alındı.`, 'success');
+                
+                const tableBody = document.getElementById('dealerHealthTableBody');
+                const rows = tableBody.querySelectorAll('tr');
+                for (const row of rows) {
+                    const dealerNameCell = row.cells[0].querySelector('span');
+                    if (dealerNameCell && dealerNameCell.innerText === currentDealerForPlan) {
+                        row.classList.add('highlight-row');
+                        setTimeout(() => { row.classList.remove('highlight-row'); }, 3000);
+                        break;
+                    }
+                }
+
+                closeImprovementPlanModal();
+            }
+        }
+
+        let improvementPlans = [];
+
+        function addImprovementPlanToTracker(dealerName, targetScore) {
+            const today = new Date().toLocaleDateString('tr-TR');
+            const newPlan = {
+                dealer: dealerName,
+                startDate: today,
+                target: targetScore,
+                progress: 5,
+                status: 'Başlatıldı'
+            };
+            improvementPlans.push(newPlan);
+            renderImprovementTrackingTable();
+        }
+
+        function renderImprovementTrackingTable() {
+            const card = document.getElementById('improvementTrackingCard');
+            const tbody = document.getElementById('improvementTrackingTableBody');
+            
+            if (improvementPlans.length > 0) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            improvementPlans.forEach(plan => {
+                const row = `<tr><td><span style="font-weight: 600;">${plan.dealer}</span></td><td>${plan.startDate}</td><td><span style="font-weight:bold; color:var(--brand-color);">${plan.target}/100</span></td><td><div style="display: flex; align-items: center; gap: 10px;"><div style="flex: 1; background: #e2e8f0; height: 8px; border-radius: 4px; width: 100px;"><div style="width: ${plan.progress}%; height: 100%; background: var(--warning-color); border-radius: 4px;"></div></div><span style="font-size: 0.85rem;">%${plan.progress}</span></div></td><td>6 Ay</td><td><span class="status-orta"><i class="fas fa-spinner fa-spin"></i> ${plan.status}</span></td></tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        var map = L.map('map').setView([39.9334, 32.8597], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        var markersGroup = L.layerGroup().addTo(map);
+        var heatGroup = L.layerGroup();
+        var analysisGroup = L.layerGroup().addTo(map);
+        var serviceGroup = L.layerGroup();
+
+        var blueIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
+        var violetIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        var orangeIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        var greenIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+            className: 'pulsing-marker'
+        });
+        
+        var factoryIcon = L.divIcon({
+            className: 'custom-factory-icon',
+            html: '<div style="background-color: #7c3aed; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"><i class="fas fa-industry" style="color: white; font-size: 16px;"></i></div>',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+            popupAnchor: [0, -20]
+        });
+
+        let cities = [];
+
+        async function initDashboard() {
+            try {
+                const [citiesRes, dealersRes] = await Promise.all([
+                    fetch('/api/sehirler'),
+                    fetch('/api/bayiler')
+                ]);
+
+                if (!citiesRes.ok || !dealersRes.ok) throw new Error("API Yanıt Vermedi");
+
+                const citiesData = await citiesRes.json();
+                const dealersData = await dealersRes.json();
+
+                cities = citiesData.map(c => {
+                    const cityDealers = dealersData.filter(d => d.sehir === c.sehir_adi);
+                    const dealerCount = cityDealers.length;
+                    
+                    let totalRevenue = 0;
+                    cityDealers.forEach(d => totalRevenue += parseFloat(d.satis_miktari));
+                    
+                    let revStr = "₺" + (totalRevenue / 1000000).toFixed(1) + "M";
+                    if (totalRevenue < 1000000 && totalRevenue > 0) revStr = "₺" + (totalRevenue / 1000).toFixed(0) + "K";
+                    if (dealerCount === 0) revStr = "Potansiyel";
+
+                    const popVal = parsePopulation(c.nufus);
+                    const targetDealers = Math.max(1, Math.ceil(popVal / 0.6)); 
+                    
+                    let simulatedSaturation = (dealerCount / targetDealers) * 100;
+
+                    const highSaturationCities = ['Bursa', 'Gaziantep', 'Samsun', 'Afyon', 'Adana'];
+                    const mediumSaturationCities = ['Ankara', 'Antalya', 'Konya', 'Trabzon'];
+                    
+                    if (highSaturationCities.includes(c.sehir_adi)) simulatedSaturation = 85 + Math.random() * 10;
+                    else if (mediumSaturationCities.includes(c.sehir_adi)) simulatedSaturation = 50 + Math.random() * 20;
+                    else simulatedSaturation = Math.max(5, simulatedSaturation);
+                    
+                    let saturation = Math.round(simulatedSaturation);
+                    if (saturation > 100) saturation = 100;
+
+                    let rec = "Orta";
+                    if (saturation < 45) rec = "Mükemmel";
+                    else if (saturation >= 80) rec = "Kötü";
+                    
+                    return {
+                        name: c.sehir_adi,
+                        image: c.resim_yolu,
+                        coords: [parseFloat(c.lat), parseFloat(c.lon)],
+                        dealers: dealerCount,
+                        margin: "%25", 
+                        revenue: revStr,
+                        rec: rec,
+                        saturation: saturation,
+                        population: c.nufus,
+                        medianAge: c.yas_ortalamasi,
+                        income: c.gelir_duzeyi
+                    };
+                });
+
+                initMapMarkers();
+                renderCityStatusTable();
+
+            } catch (error) {
+                console.error("Veri yükleme hatası:", error);
+                document.getElementById('dbConnectionError').style.display = 'flex';
+            }
+        }
+
+        function renderCityStatusTable() {
+            const tbody = document.getElementById('cityStatusTableBody');
+            tbody.innerHTML = '';
+            cities.forEach(city => {
+                let saturation = city.saturation;
+                
+                let statusClass = '';
+                if (city.rec === 'Mükemmel') statusClass = 'status-iyi';
+                else if (city.rec === 'Orta') statusClass = 'status-orta';
+                else if (city.rec === 'Kötü') statusClass = 'status-kotu';
+                else statusClass = 'status-info';
+
+                tbody.innerHTML += `<tr><td>${city.name}</td><td>%${saturation}</td><td class="${statusClass}">${city.rec}</td></tr>`;
+            });
+        }
+
+        function retryConnection() {
+            document.getElementById('dbConnectionError').style.display = 'none';
+            showToast('Bağlantı tekrar deneniyor...', 'info');
+            setTimeout(() => {
+                initDashboard();
+            }, 1000);
+        }
+
+        function parsePopulation(popStr) {
+            let val = parseFloat(popStr.replace(',', '.'));
+            if (popStr.includes('Bin')) val = val / 1000;
+            return val;
+        }
+        function getIncomeScore(incomeStr) {
+            if (incomeStr.includes('Yüksek')) return 90;
+            if (incomeStr.includes('Orta-Yüksek')) return 75;
+            if (incomeStr.includes('Orta')) return 50;
+            return 30;
+        }
+
+        function initMapMarkers() {
+            markersGroup.clearLayers();
+            heatGroup.clearLayers();
+
+            cities.forEach(city => {
+                let iconToUse = blueIcon;
+                if (city.revenue === 'Fabrika') {
+                    iconToUse = factoryIcon;
+                } else if (city.rec === 'Mükemmel') {
+                    iconToUse = greenIcon;
+                } else if (city.dealers === 0) {
+                    iconToUse = orangeIcon;
+                }
+
+                var marker = L.marker(city.coords, {
+                    icon: iconToUse
+                });
+                
+                marker.addTo(markersGroup);
+
+                let statusColor = '#f59e0b';
+                if (city.rec === 'Mükemmel') statusColor = '#10b981';
+                else if (city.rec === 'Kötü') statusColor = '#ef4444';
+
+                let rawRevenue = city.revenue.replace(/[^0-9,.]/g, '').replace(',', '.');
+                let multiplier = city.revenue.includes('M') ? 1000000 : (city.revenue.includes('K') ? 1000 : 1);
+                let revenueVal = parseFloat(rawRevenue) * multiplier;
+                let radius = Math.max(10, Math.min(50, revenueVal / 100000)); 
+                
+                L.circleMarker(city.coords, {
+                    radius: radius, fillColor: statusColor, color: '#fff', weight: 1, opacity: 1, fillOpacity: 0.6
+                }).bindTooltip(`<b>${city.name}</b><br>Durum: ${city.rec}<br>Ciro Hacmi: ${city.revenue}`).addTo(heatGroup);
+                
+                const competition = city.dealers > 10 ? 'Yüksek' : (city.dealers > 4 ? 'Orta' : (city.dealers > 0 ? 'Düşük' : 'Yok (Fırsat)'));
+
+                marker.bindTooltip(`
+                    <div style="width: 250px; font-family: 'Inter', sans-serif; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="height: 65px; background-image: url('${city.image}'); background-size: cover; background-position: center; position: relative;">
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); padding: 15px 10px 6px;">
+                                <h3 style="margin: 0; color: white; font-size: 1rem; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${city.name}</h3>
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 10px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; font-size: 0.75rem;">
+                                <div style="background: #f8fafc; padding: 5px; border-radius: 6px; text-align: center;">
+                                    <div style="color: #64748b; font-size: 0.65rem;">BAYİ SAYISI</div>
+                                    <div style="font-weight: bold; color: #1e293b; font-size: 0.9rem;">${city.dealers}</div>
+                                </div>
+                                <div style="background: #f8fafc; padding: 5px; border-radius: 6px; text-align: center;">
+                                    <div style="color: #64748b; font-size: 0.65rem;">CİRO HACMİ</div>
+                                    <div style="font-weight: bold; color: #1e293b; font-size: 0.9rem;">${city.revenue}</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #334155; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;"><i class="fas fa-users" style="width: 18px;"></i> Nüfus:</span>
+                                    <span style="font-weight: 600;">${city.population}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;"><i class="fas fa-user-clock" style="width: 18px;"></i> Yaş Ort:</span>
+                                    <span style="font-weight: 600;">${city.medianAge}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;"><i class="fas fa-wallet" style="width: 18px;"></i> Gelir:</span>
+                                    <span style="font-weight: 600;">${city.income}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;"><i class="fas fa-chart-pie" style="width: 18px;"></i> Rekabet:</span>
+                                    <span style="font-weight: 600; color: ${competition === 'Yüksek' ? '#ef4444' : (competition === 'Orta' ? '#f59e0b' : '#10b981')}">${competition}</span>
+                                </div>
+                            </div>
+                            <div style="background: ${city.rec === 'Mükemmel' ? '#ecfdf5' : (city.rec === 'Kötü' ? '#fef2f2' : '#fffbeb')}; padding: 6px 8px; border-radius: 6px; text-align: center; margin-top: 10px;">
+                                <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Yapay Zeka Önerisi</div>
+                                <div style="font-weight: bold; font-size: 0.85rem; color: ${city.rec === 'Mükemmel' ? '#15803d' : (city.rec === 'Kötü' ? '#b91c1c' : '#b45309')}">
+                                    <i class="fas ${city.rec === 'Mükemmel' ? 'fa-check-circle' : (city.rec === 'Kötü' ? 'fa-times-circle' : 'fa-exclamation-circle')}"></i> ${city.rec}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `, { direction: 'top', opacity: 1, className: 'custom-tooltip' });
+
+                marker.on('click', function() {
+                    const isPositive = city.rec === 'Mükemmel';
+                    const decisionColor = isPositive ? '#10b981' : (city.rec === 'Kötü' ? '#ef4444' : '#f59e0b');
+                    const decisionIcon = isPositive ? 'fa-check-circle' : (city.rec === 'Kötü' ? 'fa-times-circle' : 'fa-exclamation-circle');
+                    const compColor = city.dealers > 10 ? '#ef4444' : (city.dealers > 4 ? '#f59e0b' : '#10b981');
+
+                    document.getElementById('cityInfoCard').innerHTML = `
+                        <div style="animation: fadeInCard 0.3s ease-out;">
+                        <div style="position: relative; margin-bottom: 20px;">
+                            <img src="${city.image}" onerror="this.src='https://placehold.co/600x300?text=${city.name}'" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: block;">
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); padding: 20px 15px 10px; border-radius: 0 0 8px 8px;">
+                                <h2 style="margin: 0; color: white; font-size: 1.8rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${city.name}</h2>
+                                <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;"><i class="fas fa-chart-line"></i> Detaylı Pazar Analizi</span>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="color: #7f8c8d; font-size: 0.8rem;">Aylık Ciro</div>
+                                <div style="font-weight: bold; color: var(--dark); font-size: 1.1rem;">${city.revenue}</div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="color: #7f8c8d; font-size: 0.8rem;">Tahmini Kar</div>
+                                <div style="font-weight: bold; color: var(--success-color); font-size: 1.1rem;">₺45,000</div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="color: #7f8c8d; font-size: 0.8rem;">Rekabet</div>
+                                <div style="font-weight: bold; color: ${compColor}; font-size: 1.1rem;">${competition}</div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;">
+                                <div style="color: #7f8c8d; font-size: 0.8rem;">Mevcut Bayi</div>
+                                <div style="font-weight: bold; color: var(--dark); font-size: 1.1rem;">${city.dealers} Adet</div>
+                            </div>
+                        </div>
+
+                        <div style="background: ${isPositive ? '#d4edda' : (city.rec === 'Kötü' ? '#f8d7da' : '#fff3cd')}; padding: 15px; border-radius: 8px; border-left: 5px solid ${decisionColor}; margin-bottom: 15px;">
+                            <h4 style="margin: 0 0 5px 0; color: ${decisionColor};"><i class="fas ${decisionIcon}"></i> Stratejik Karar: ${city.rec}</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #555;">${isPositive ? 'Bu lokasyonda yüksek potansiyel tespit edildi. Yatırım yapılması önerilir.' : 'Pazar doygunluğu veya risk faktörleri nedeniyle şu an için önerilmemektedir.'}</p>
+                        </div>
+                        
+                        ${isPositive ? `
+                        <div style="margin-bottom: 15px; height: 180px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h5 style="margin: 0 0 10px 0; color: #64748b; font-size: 0.8rem; text-align: center;">Tahmini Yatırım Geri Dönüşü (ROI - 4 Yıl)</h5>
+                            <canvas id="roiChart"></canvas>
+                        </div>
+                        ` : ''}
+
+                        <div style="display: flex; gap: 10px; flex-direction: column;">
+                            ${isPositive ? `<button onclick="addDealerDB('${city.name}')" style="width: 100%; padding: 12px; background-color: var(--brand-color); color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: 0.3s; font-weight: bold; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);"><i class="fas fa-plus-circle"></i> Yeni Bayi Açılışını Onayla</button>` : ''}
+                        </div>
+                        </div>
+                    `;
+
+                    if (isPositive) {
+                        const ctxRoi = document.getElementById('roiChart').getContext('2d');
+                        new Chart(ctxRoi, {
+                            type: 'line',
+                            data: {
+                                labels: ['Başlangıç', '1. Yıl', '2. Yıl', '3. Yıl', '4. Yıl'],
+                                datasets: [{
+                                    label: 'Net Nakit Akışı',
+                                    data: [-500000, -150000, 200000, 800000, 1500000],
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointRadius: 4,
+                                    pointBackgroundColor: '#fff',
+                                    pointBorderColor: '#10b981',
+                                    pointBorderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return '₺' + context.parsed.y.toLocaleString('tr-TR');
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        grid: { color: '#e2e8f0', borderDash: [5, 5] },
+                                        ticks: {
+                                            callback: function(value) { return '₺' + (value/1000) + 'K'; },
+                                            font: { size: 10 }
+                                        }
+                                    },
+                                    x: {
+                                        grid: { display: false },
+                                        ticks: { font: { size: 10 } }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    document.getElementById('cityDemographicsPanel').style.display = 'block';
+                    document.getElementById('demoCityName').innerText = city.name;
+                    document.getElementById('demoPopulation').innerText = city.population;
+                    document.getElementById('demoAge').innerText = city.medianAge;
+                    document.getElementById('demoIncome').innerText = city.income;
+
+                    let analysisText = "";
+                    const age = parseFloat(city.medianAge);
+                    const incomeScore = getIncomeScore(city.income);
+                    const popVal = parsePopulation(city.population);
+
+                    if (age < 30) analysisText += "Genç ve dinamik nüfus yapısı, teknolojik ürünlere ilgiyi artırabilir. ";
+                    else if (age > 35) analysisText += "Olgun nüfus yapısı, dayanıklı ve premium ürün segmenti için uygundur. ";
+                    else analysisText += "Dengeli yaş dağılımı, genel ürün portföyü için ideal. ";
+
+                    if (incomeScore > 60) analysisText += "Yüksek alım gücü sayesinde kar marjı yüksek ürünler hedeflenmeli.";
+                    else if (incomeScore < 40) analysisText += "Fiyat hassasiyeti yüksek olabilir, kampanyalı ürünlere odaklanılmalı.";
+                    else analysisText += "Orta segment ürün grubu ile pazar payı artırılabilir.";
+
+                    document.getElementById('demoAnalysisText').innerText = analysisText;
+
+                    let ageDist = [20, 30, 30, 20];
+                    if (age < 30) ageDist = [35, 35, 20, 10];
+                    else if (age > 35) ageDist = [15, 20, 35, 30];
+
+                    const ctxAge = document.getElementById('panelAgeChart').getContext('2d');
+                    if (window.panelAgeChartInstance) window.panelAgeChartInstance.destroy();
+                    
+                    window.panelAgeChartInstance = new Chart(ctxAge, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['18-25', '26-40', '41-55', '55+'],
+                            datasets: [{
+                                data: ageDist,
+                                backgroundColor: ['#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 9 } } } } }
+                    });
+
+                    let incomeDist = [25, 50, 20, 5];
+                    if (incomeScore > 70) incomeDist = [10, 30, 40, 20];
+                    else if (incomeScore < 40) incomeDist = [40, 40, 15, 5];
+
+                    const ctxIncome = document.getElementById('panelIncomeChart').getContext('2d');
+                    if (window.panelIncomeChartInstance) window.panelIncomeChartInstance.destroy();
+
+                    window.panelIncomeChartInstance = new Chart(ctxIncome, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Düşük', 'Orta', 'Yüksek', 'Prem.'],
+                            datasets: [{ label: 'Oran', data: incomeDist, backgroundColor: ['#cbd5e1', '#94a3b8', '#10b981', '#059669'], borderRadius: 4 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+                    });
+                });
+            });
+        }
+
+        initDashboard();
+
+        function switchMapLayer(type) {
+            if (type === 'markers') {
+                map.addLayer(markersGroup);
+                map.removeLayer(heatGroup);
+                document.getElementById('btnMarkers').classList.add('active');
+                document.getElementById('btnHeat').classList.remove('active');
+            } else {
+                map.removeLayer(markersGroup);
+                map.addLayer(heatGroup);
+                document.getElementById('btnMarkers').classList.remove('active');
+                document.getElementById('btnHeat').classList.add('active');
+            }
+        }
+
+        const logisticsHubs = [
+            { name: "İstanbul (Merkez Depo)", coords: [41.0082, 28.9784], color: '#2563eb', modes: ['road', 'sea', 'rail'] },
+            { name: "Afyon (Fabrika & Dağıtım)", coords: [38.7569, 30.5387], color: '#8b5cf6', modes: ['road', 'rail'] },
+            { name: "Sivas (Fabrika & Dağıtım)", coords: [39.7477, 37.0179], color: '#ef4444', modes: ['road', 'rail'] }
+        ];
+
+        var isAnalysisMode = false;
+        function toggleAnalysisMode() {
+            isAnalysisMode = !isAnalysisMode;
+            const btn = document.getElementById('btnAnalysis');
+            
+            if (isAnalysisMode) {
+                btn.classList.add('active');
+                analysisGroup.clearLayers();
+                
+                logisticsHubs.forEach(hub => {
+                    let hubIcon = hub.name.includes('Fabrika') ? factoryIcon : violetIcon;
+                    L.marker(hub.coords, { icon: hubIcon }).addTo(analysisGroup)
+                        .bindPopup(`<b>${hub.name}</b><br>Ana Dağıtım Noktası`);
+                    
+                    L.circle(hub.coords, { radius: 300000, color: hub.color, fillOpacity: 0.05, weight: 1 }).addTo(analysisGroup);
+                });
+
+                cities.forEach(city => {
+                    let nearest = null;
+                    let minDst = Infinity;
+
+                    logisticsHubs.forEach(hub => {
+                        let d = calculateDistance(city.coords[0], city.coords[1], hub.coords[0], hub.coords[1]);
+                        if (d < minDst) {
+                            minDst = d;
+                            nearest = hub;
+                        }
+                    });
+
+                    if (nearest && minDst > 1) {
+                        L.polyline([city.coords, nearest.coords], {
+                            color: nearest.color,
+                            weight: 2,
+                            dashArray: '5, 10',
+                            opacity: 0.8
+                        }).addTo(analysisGroup).bindPopup(`${city.name} <i class="fas fa-arrow-right"></i> ${nearest.name}<br>Mesafe: ${Math.round(minDst)} km`);
+                    }
+                });
+
+                showToast('Lojistik Ağı Analizi Aktif:<br>Bayiler en yakın dağıtım noktasına (İstanbul, Afyon, Sivas) bağlandı.', 'info');
+            } else {
+                btn.classList.remove('active');
+                analysisGroup.clearLayers();
+            }
+        }
+
+        function clearAnalysis() {
+            analysisGroup.clearLayers();
+        }
+
+        map.on('click', function(e) {});
+
+        function addDealerDB(cityName) {
+            const today = new Date();
+            const openingDate = new Date(today.setFullYear(today.getFullYear() + 1));
+            const formattedDate = openingDate.toLocaleDateString('tr-TR');
+
+            const newDealer = {
+                city: cityName,
+                date: formattedDate,
+                statusHTML: '<span style="color: var(--success-color); font-weight: bold;"><i class="fas fa-globe-europe"></i> GIS Analizi: Onaylandı</span>',
+                duration: '12 Ay (Planlanan)'
+            };
+            
+            const dealers = getStoredDealers();
+            dealers.push(newDealer);
+            localStorage.setItem('kds_pending_dealers', JSON.stringify(dealers));
+            renderPendingDealersTable();
+            showToast(`<b>${cityName}</b> lokasyonunda potansiyel doğrulandı.<br>12 ay sonrası için bayi açılışı planlandı.`, 'success');
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        const logisticsData = {
+            'Istanbul': { name: 'İstanbul', volume: 25000, coords: [41.0082, 28.9784], modes: ['sea', 'road', 'rail'] },
+            'Ankara': { name: 'Ankara', volume: 18000, coords: [39.9334, 32.8597], modes: ['rail', 'road'] },
+            'Izmir': { name: 'İzmir', volume: 20000, coords: [38.4237, 27.1428], modes: ['sea', 'rail', 'road'] },
+            'Bursa': { name: 'Bursa', volume: 15000, coords: [40.1885, 29.0610], modes: ['sea', 'road'] },
+            'Antalya': { name: 'Antalya', volume: 12000, coords: [36.8969, 30.7133], modes: ['sea', 'road'] },
+            'Adana': { name: 'Adana', volume: 14000, coords: [37.0000, 35.3213], modes: ['road', 'rail', 'sea'] },
+            'Trabzon': { name: 'Trabzon', volume: 8000, coords: [41.0027, 39.7168], modes: ['sea', 'road'] },
+            'Gaziantep': { name: 'Gaziantep', volume: 11000, coords: [37.0662, 37.3833], modes: ['road', 'rail'] },
+            'Konya': { name: 'Konya', volume: 10000, coords: [37.8714, 32.4846], modes: ['road', 'rail'] },
+            'Diyarbakir': { name: 'Diyarbakır', volume: 9000, coords: [37.9144, 40.2306], modes: ['road', 'rail'] },
+            'Samsun': { name: 'Samsun', volume: 8500, coords: [41.2867, 36.3300], modes: ['sea', 'road', 'rail'] },
+            'Afyon': { name: 'Afyon', volume: 5000, coords: [38.7569, 30.5387], modes: ['road', 'rail'] },
+            'Sivas': { name: 'Sivas', volume: 6000, coords: [39.7477, 37.0179], modes: ['road', 'rail'] }
+        };
+
+        var logisticsLayerGroup;
+        var currentLogisticsMode = null;
+
+        async function updateLogistics(isCostUpdate = false) {
+            const city = document.getElementById('logisticsCitySelect').value;
+            const data = logisticsData[city];
+            
+            const cityObj = cities.find(c => c.name === data.name);
+            const imgEl = document.getElementById('logisticsCityImage');
+            if (cityObj) {
+                imgEl.src = cityObj.image;
+                imgEl.style.display = 'block';
+                document.getElementById('logisticsCityOverlayName').innerText = cityObj.name;
+            } else {
+                imgEl.style.display = 'none';
+            }
+
+            document.getElementById('totalVolume').innerText = data.volume.toLocaleString();
+
+            const cityModes = data.modes || ['road'];
+            const availableModes = [];
+
+            const modeConfig = {
+                'road': { name: 'Tır Filosu (Acil)', icon: 'fa-truck', costPerUnit: 120, durationDays: 3, color: '#ef4444', desc: 'Yüksek maliyet, hızlı teslimat.' },
+                'rail': { name: 'Demiryolu (Blok Tren)', icon: 'fa-train', costPerUnit: 65, durationDays: 12, color: '#f59e0b', desc: 'Orta maliyet, planlı sevkiyat.' },
+                'sea':  { name: 'Denizyolu (Konteyner)', icon: 'fa-ship', costPerUnit: 40, durationDays: 25, color: '#3b82f6', desc: 'En düşük maliyet, uzun süre.' }
+            };
+
+            let comparisonHTML = '<div style="grid-column: span 2; display: flex; flex-direction: column; gap: 8px;">';
+            
+            cityModes.forEach(mode => {
+                availableModes.push(mode);
+
+                const config = modeConfig[mode];
+                const totalCost = data.volume * config.costPerUnit;
+                const formattedCost = (totalCost / 1000000).toFixed(1) + 'M';
+
+                comparisonHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px; border-radius: 6px; border-left: 4px solid ${config.color};">
+                    <div id="mode-card-${mode}" class="logistics-mode-card" onclick="selectLogisticsMode('${mode}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px; border-radius: 6px; border-left: 4px solid ${config.color}; transition: all 0.2s;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas ${config.icon}" style="color: ${config.color}; width: 20px;"></i>
+                            <div>
+                                <span style="font-weight: 600; font-size: 0.9rem; display:block;">${config.name}</span>
+                                <span style="font-size: 0.75rem; color: #64748b;">${config.desc}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.85rem;">
+                            <div style="font-weight: bold;">₺${formattedCost}</div>
+                            <div style="color: var(--text-muted);">${config.durationDays} Gün</div>
+                        </div>
+                    </div>
+                `;
+            });
+            comparisonHTML += '</div>';
+
+            document.getElementById('logisticsDetails').innerHTML = comparisonHTML;
+
+            if (isCostUpdate && currentLogisticsMode && availableModes.includes(currentLogisticsMode)) {
+                selectLogisticsMode(currentLogisticsMode);
+            } else if (availableModes.length > 0) {
+                selectLogisticsMode(availableModes[0]);
+            }
+        }
+
+        async function selectLogisticsMode(mode) {
+            currentLogisticsMode = mode;
+            document.querySelectorAll('.logistics-mode-card').forEach(el => {
+                el.style.background = '#f8fafc';
+                el.style.transform = 'scale(1)';
+                el.style.boxShadow = 'none';
+            });
+            
+            const selectedEl = document.getElementById(`mode-card-${mode}`);
+            if (selectedEl) {
+                selectedEl.style.background = '#eff6ff';
+                selectedEl.style.transform = 'scale(1.01)';
+                selectedEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            }
+
+            const modeConfig = {
+                'road': { days: 3, color: '#ef4444', text: 'Çok Erken (Stok Maliyeti Oluşabilir)' },
+                'rail': { days: 12, color: '#f59e0b', text: 'İdeal Zamanlama' },
+                'sea':  { days: 25, color: '#3b82f6', text: 'Tam Zamanında (JIT)' }
+            };
+            const config = modeConfig[mode] || modeConfig['road'];
+            
+            const progressEl = document.getElementById('deadlineProgress');
+            const textEl = document.getElementById('deadlineText');
+            progressEl.style.backgroundColor = config.color;
+            textEl.innerText = config.text;
+            textEl.style.color = config.color;
+
+            const city = document.getElementById('logisticsCitySelect').value;
+            const data = logisticsData[city];
+            
+            let nearestHub = null;
+            let minDist = Infinity;
+            logisticsHubs.forEach(hub => {
+                if (hub.modes.includes(mode)) {
+                    const d = calculateDistance(hub.coords[0], hub.coords[1], data.coords[0], data.coords[1]);
+                    if (d < minDist) { minDist = d; nearestHub = hub; }
+                }
+            });
+
+            if (typeof miniMap !== 'undefined' && data.coords && nearestHub) {
+                if (!logisticsLayerGroup) {
+                    logisticsLayerGroup = L.layerGroup().addTo(miniMap);
+                    if (typeof miniMarker !== 'undefined') miniMap.removeLayer(miniMarker);
+                }
+                
+                logisticsLayerGroup.clearLayers();
+
+                L.marker(nearestHub.coords).addTo(logisticsLayerGroup).bindPopup(`Çıkış: ${nearestHub.name}`);
+                L.marker(data.coords).addTo(logisticsLayerGroup).bindPopup("Hedef: " + city);
+
+                const modeColors = { 'road': '#2563eb', 'rail': '#f59e0b', 'sea': '#3b82f6' };
+                const color = modeColors[mode] || '#2563eb';
+
+                if (mode === 'road') {
+                    const start = nearestHub.coords;
+                    const end = data.coords;
+                    const url = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`;
+
+                    try {
+                        const response = await fetch(url);
+                        const json = await response.json();
+
+                        if (json.code === 'Ok' && json.routes && json.routes.length > 0) {
+                            const routeGeoJSON = json.routes[0].geometry;
+                            const routeLayer = L.geoJSON(routeGeoJSON, {
+                                style: { color: color, weight: 4, opacity: 0.8 }
+                            }).addTo(logisticsLayerGroup);
+                            miniMap.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                        } else { throw new Error("Rota bulunamadı"); }
+                    } catch (e) {
+                        drawStraightLine(nearestHub.coords, data.coords, color, null);
+                    }
+                } else if (mode === 'rail') {
+                    const railRoutes = {
+                        'Ankara': [[38.7569, 30.5387], [39.10, 30.20], [39.4242, 29.9833], [39.60, 30.10], [39.7667, 30.5256], [39.65, 31.20], [39.57, 32.13], [39.96, 32.58], [39.9334, 32.8597]],
+                        'Izmir': [[38.7569, 30.5387], [38.86, 30.01], [38.67, 29.40], [38.40, 28.96], [38.35, 28.51], [38.48, 28.13], [38.49, 27.70], [38.61, 27.43], [38.60, 27.07], [38.4237, 27.1428]],
+                        'Adana': [[39.7477, 37.0179], [39.35, 36.40], [38.73, 35.48], [38.35, 35.08], [37.96, 34.68], [37.54, 34.48], [37.42, 34.87], [37.25, 35.06], [37.0000, 35.3213]],
+                        'Konya': [[38.7569, 30.5387], [38.58, 31.02], [38.35, 31.41], [38.27, 31.91], [38.26, 32.40], [37.8714, 32.4846]],
+                        'Gaziantep': [[39.7477, 37.0179], [39.23, 37.39], [38.82, 37.93], [38.3552, 38.3095], [37.78, 37.63], [37.35, 37.13], [37.0662, 37.3833]],
+                        'Diyarbakir': [[39.7477, 37.0179], [38.3552, 38.3095], [38.40, 39.20], [38.67, 39.22], [38.39, 39.66], [38.26, 39.76], [37.9144, 40.2306]],
+                        'Samsun': [[39.7477, 37.0179], [39.86, 36.58], [40.39, 36.09], [40.6500, 35.8333], [40.83, 35.65], [40.98, 35.66], [41.07, 36.04], [41.2867, 36.3300]],
+                        'Istanbul': [[38.7569, 30.5387], [39.42, 29.98], [39.76, 30.52], [39.90, 30.03], [40.14, 29.98], [40.71, 30.36], [40.76, 29.94], [40.80, 29.43], [41.0082, 28.9784]]
+                    };
+                    
+                    const city = document.getElementById('logisticsCitySelect').value;
+                    const routePoints = railRoutes[city];
+
+                    if (routePoints) {
+                        L.polyline(routePoints, { color: '#333', weight: 5, opacity: 0.8 }).addTo(logisticsLayerGroup);
+                        const routeLayer = L.polyline(routePoints, { color: color, weight: 3, opacity: 1, dashArray: '10, 10' }).addTo(logisticsLayerGroup);
+                        miniMap.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                    } else {
+                        drawStraightLine(nearestHub.coords, data.coords, color, '15, 15');
+                    }
+                } else if (mode === 'sea') {
+                    const seaRouteWaypoints = {
+                        'Izmir': [
+                            [41.0082, 28.9784],
+                            [40.95, 28.85],
+                            [40.50, 27.50],
+                            [40.10, 26.30],
+                            [40.00, 26.20],
+                            [39.50, 26.00],
+                            [38.70, 26.40],
+                            [38.45, 26.90],
+                            [38.4237, 27.1428]
+                        ],
+                        'Antalya': [
+                            [41.0082, 28.9784],
+                            [40.95, 28.85],
+                            [40.50, 27.50],
+                            [40.10, 26.30],
+                            [40.00, 26.20],
+                            [38.00, 25.50],
+                            [36.50, 26.50],
+                            [36.00, 29.00],
+                            [36.50, 30.50],
+                            [36.8969, 30.7133]
+                        ],
+                        'Trabzon': [
+                            [41.0082, 28.9784],
+                            [41.25, 29.15],
+                            [41.30, 30.00],
+                            [41.80, 32.00],
+                            [42.00, 35.00],
+                            [41.50, 38.00],
+                            [41.0027, 39.7168]
+                        ],
+                        'Samsun': [
+                            [41.0082, 28.9784],
+                            [41.25, 29.15],
+                            [41.30, 30.50],
+                            [41.80, 33.00],
+                            [41.50, 35.50],
+                            [41.2867, 36.3300]
+                        ],
+                        'Bursa': [
+                            [41.0082, 28.9784],
+                            [40.90, 28.90],
+                            [40.60, 29.00],
+                            [40.40, 29.10],
+                            [40.1885, 29.0610]
+                        ],
+                        'Adana': [
+                            [41.0082, 28.9784],
+                            [40.95, 28.85],
+                            [40.50, 27.50],
+                            [40.10, 26.30],
+                            [40.00, 26.20],
+                            [38.00, 25.50],
+                            [36.00, 28.00],
+                            [35.80, 32.00],
+                            [36.50, 35.00],
+                            [37.0000, 35.3213]
+                        ]
+                    }; 
+
+                    const routePoints = seaRouteWaypoints[city];
+                    
+                    if (routePoints) {
+                        const routeLayer = L.polyline(routePoints, {
+                            color: color,
+                            weight: 4,
+                            opacity: 0.8,
+                            dashArray: '5, 10',
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }).addTo(logisticsLayerGroup);
+                        miniMap.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                    } else {
+                        const dashArray = '5, 10';
+                        drawStraightLine(nearestHub.coords, data.coords, color, dashArray);
+                    }
+                }
+            }
+        }
+
+        function drawStraightLine(start, end, color, dashArray) {
+            const options = { color: color, weight: 4, opacity: 0.8 };
+            if (dashArray) options.dashArray = dashArray;
+            
+            const routeLine = L.polyline([start, end], options).addTo(logisticsLayerGroup);
+            miniMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+        }
+
+        const detailedProductData = {
+            'bulasik': {
+                name: 'Eco-Smart Bulaşık Makinesi',
+                pastSalesAvg: 320,
+                futureForecastAvg: 550,
+                techScore: 9,
+                saturation: 40,
+                costScore: 6,
+                competition: 8,
+                logistics: 7,
+                image: 'img/bulasik.jpg',
+                features: ['Yapay Zeka Yıkama', '%40 Su Tasarrufu', 'Otomatik Dozajlama', 'Sessiz Motor'],
+                pastTrend: [300, 310, 315, 325, 330, 340],
+                futureTrend: [380, 420, 480, 550, 650, 820]
+            },
+            'buzdolabi': {
+                name: 'No-Frost XL Buzdolabı',
+                pastSalesAvg: 800,
+                futureForecastAvg: 850,
+                techScore: 7,
+                saturation: 85,
+                costScore: 5,
+                competition: 6,
+                logistics: 5,
+                image: 'img/buzdolabi.jpg',
+                features: ['Taze Hava Teknolojisi', 'Wi-Fi Bağlantı', 'Hızlı Soğutma', 'Geniş İç Hacim'],
+                pastTrend: [780, 790, 800, 810, 805, 815],
+                futureTrend: [820, 830, 840, 850, 860, 900]
+            },
+            'kurutma': {
+                name: 'Hibrit Kurutma Makinesi',
+                pastSalesAvg: 150,
+                futureForecastAvg: 400,
+                techScore: 8,
+                saturation: 20,
+                costScore: 7,
+                competition: 3,
+                logistics: 8,
+                image: 'img/kurutma.jpg',
+                features: ['Isı Pompalı', 'Kırışıklık Önleyici', 'Buhar Destekli', '20 Dk Hızlı Program'],
+                pastTrend: [120, 130, 140, 150, 160, 200],
+                futureTrend: [250, 300, 350, 400, 500, 600]
+            },
+            'klima': {
+                name: 'Inverter Klima 18000 BTU',
+                pastSalesAvg: 450,
+                futureForecastAvg: 600,
+                techScore: 8,
+                saturation: 60,
+                costScore: 5,
+                competition: 7,
+                logistics: 6,
+                image: 'img/klima.jpg',
+                features: ['A++ Enerji', 'Wi-Fi Kontrol', 'Sessiz Mod', 'Hızlı Soğutma'],
+                pastTrend: [410, 420, 430, 440, 450, 460],
+                futureTrend: [480, 500, 530, 560, 580, 600]
+            },
+            'airfryer': {
+                name: 'Air Fryer XXL',
+                pastSalesAvg: 600,
+                futureForecastAvg: 950,
+                techScore: 9,
+                saturation: 30,
+                costScore: 8,
+                competition: 9,
+                logistics: 9,
+                image: 'img/airfryer.jpg',
+                features: ['Yağsız Pişirme', 'Geniş Hazne', 'Dokunmatik Ekran', 'Akıllı Tarifler'],
+                pastTrend: [500, 520, 550, 580, 600, 620],
+                futureTrend: [650, 700, 780, 850, 900, 950]
+            }
+        };
+
+        const ctxStrategyTrend = document.getElementById('strategyTrendChart').getContext('2d');
+        let strategyTrendChart = new Chart(ctxStrategyTrend, {
+            type: 'line',
+            data: {
+                labels: ['-6 Ay', '-5 Ay', '-4 Ay', '-3 Ay', '-2 Ay', '-1 Ay', '+1 Ay', '+2 Ay', '+3 Ay', '+4 Ay', '+5 Ay', '+6 Ay'],
+                datasets: [{
+                    label: 'Geçmiş Satış',
+                    data: [],
+                    borderColor: '#7f8c8d',
+                    backgroundColor: 'rgba(127, 140, 141, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Gelecek Tahmini',
+                    data: [],
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderDash: [5, 5],
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    title: { display: true, text: 'Satış Trendi ve Tahmin Analizi' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        function updateScenario() {
+            const slider = document.getElementById('scenarioSlider');
+            const valueDisplay = document.getElementById('scenarioValue');
+            const value = parseInt(slider.value);
+
+            valueDisplay.textContent = (value >= 0 ? '+' : '') + value + '%';
+
+            const sliderMat = document.getElementById('scenarioSliderMaterial');
+            const valueDisplayMat = document.getElementById('scenarioValueMaterial');
+            const valueMat = parseInt(sliderMat.value);
+            valueDisplayMat.textContent = '+' + valueMat + '%';
+            
+            updateStrategyChart();
+        }
+
+        function updateStrategyChart() {
+            const productKey = document.getElementById('strategyProductSelect').value;
+            const productKey2 = document.getElementById('strategyProductSelect2').value;
+            
+            const data = detailedProductData[productKey];
+            const data2 = detailedProductData[productKey2];
+
+            const scenarioSlider = document.getElementById('scenarioSlider');
+            const scenarioValue = scenarioSlider ? parseInt(scenarioSlider.value) : 0;
+            
+            const scenarioSliderMat = document.getElementById('scenarioSliderMaterial');
+            const scenarioValueMat = scenarioSliderMat ? parseInt(scenarioSliderMat.value) : 0;
+
+            const costImpact = (scenarioValue / 10.0) + (scenarioValueMat / 12.5);
+
+            const simulatedCostScore1 = Math.max(0, Math.min(10, data.costScore - costImpact));
+            const simulatedCostScore2 = Math.max(0, Math.min(10, data2.costScore - costImpact));
+
+            const demandScore = Math.min(10, Math.round((data.futureForecastAvg / 1000) * 10) + 2); 
+            const saturationScore = Math.round(data.saturation / 10);
+            const demandScore2 = Math.min(10, Math.round((data2.futureForecastAvg / 1000) * 10) + 2);
+            const saturationScore2 = Math.round(data2.saturation / 10);
+
+            strategyChart.data.datasets[0].data = [data.techScore, saturationScore, simulatedCostScore1, data.competition, data.logistics, demandScore];
+            strategyChart.data.datasets[0].label = data.name;
+            
+            if (strategyChart.data.datasets[1]) {
+                strategyChart.data.datasets[1].label = data2.name;
+                strategyChart.data.datasets[1].data = [data2.techScore, saturationScore2, simulatedCostScore2, data2.competition, data2.logistics, demandScore2];
+            } else {
+                strategyChart.data.datasets.push({
+                    label: data2.name,
+                    data: [data2.techScore, saturationScore2, simulatedCostScore2, data2.competition, data2.logistics, demandScore2],
+                    fill: true,
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: '#ef4444',
+                    pointBackgroundColor: '#ef4444'
+                });
+            }
+            
+            strategyChart.update();
+
+            let aiComment = "";
+            if (data.techScore > data2.techScore) {
+                aiComment += `<b>${data.name}</b> teknolojik açıdan daha donanımlıyken, `;
+            } else if (data2.techScore > data.techScore) {
+                aiComment += `<b>${data2.name}</b> teknolojik özellikleri ile öne çıkarken, `;
+            } else {
+                aiComment += `İki ürün teknolojik olarak benzer seviyedeyken, `;
+            }
+
+            if (simulatedCostScore1 > simulatedCostScore2) aiComment += `<b>${data.name}</b> maliyet avantajı sağlamaktadır.`;
+            else if (simulatedCostScore2 > simulatedCostScore1) aiComment += `<b>${data2.name}</b> maliyet yapısıyla daha rekabetçidir.`;
+            else aiComment += `maliyet yapıları dengelidir.`;
+
+            if (scenarioValue !== 0 || scenarioValueMat !== 0) {
+                aiComment += `<br><b>Senaryo Etkisi:</b> `;
+                if (scenarioValue !== 0) aiComment += `Döviz (${scenarioValue > 0 ? '+' : ''}${scenarioValue}%) `;
+                if (scenarioValue !== 0 && scenarioValueMat !== 0) aiComment += `ve `;
+                if (scenarioValueMat !== 0) aiComment += `Hammadde (+${scenarioValueMat}%) `;
+                aiComment += `değişimi maliyet skorlarını baskılıyor.`;
+            }
+
+            document.getElementById('radarCommentary').innerHTML = `<i class="fas fa-robot" style="color: var(--brand-color);"></i> <strong>AI Karşılaştırması:</strong> ${aiComment}`;
+
+            document.getElementById('productImage1').src = data.image;
+            document.getElementById('productName1').innerText = data.name;
+            document.getElementById('productFeatures1').innerHTML = data.features.map(f => 
+                `<span style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; border: 1px solid #e2e8f0; font-weight: 500;">${f}</span>`
+            ).join('');
+
+            document.getElementById('productImage2').src = data2.image;
+            document.getElementById('productName2').innerText = data2.name;
+            document.getElementById('productFeatures2').innerHTML = data2.features.map(f => 
+                `<span style="background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; border: 1px solid #e2e8f0; font-weight: 500;">${f}</span>`
+            ).join('');
+
+            strategyTrendChart.data.datasets[0].data = [...data.pastTrend, null, null, null, null, null, null];
+            strategyTrendChart.data.datasets[1].data = [null, null, null, null, null, data.pastTrend[5], ...data.futureTrend];
+            strategyTrendChart.update();
+
+            const growthRate = Math.round(((data.futureForecastAvg - data.pastSalesAvg) / data.pastSalesAvg) * 100);
+            const description = `
+                <strong>Analiz Sonucu:</strong> Geçmiş 6 ayda ortalama <b>${data.pastSalesAvg}</b> adet satan ürünün, 
+                gelecek dönemde <b>%${growthRate}</b> artışla <b>${data.futureForecastAvg}</b> adede ulaşması bekleniyor. 
+                Teknoloji puanı <b>${data.techScore}/10</b> seviyesindedir.
+            `;
+            document.getElementById('strategyDescription').innerHTML = description;
+
+            const costStatus = simulatedCostScore1 >= 7 ? 'Yüksek' : (simulatedCostScore1 >= 4 ? 'Orta' : 'Düşük');
+            const demandStatus = data.futureForecastAvg >= 500 ? 'Yüksek' : 'Orta';
+
+            const totalScenarioImpact = scenarioValue + scenarioValueMat;
+            let riskLevel = 'Düşük';
+            let riskColor = 'var(--success-color)';
+            
+            if (totalScenarioImpact > 40) {
+                riskLevel = 'Yüksek';
+                riskColor = 'var(--accent-color)';
+            } else if (totalScenarioImpact > 15) {
+                riskLevel = 'Orta';
+                riskColor = 'var(--warning-color)';
+            }
+
+            document.getElementById('strategySummaryList').innerHTML = `
+                <li>Teknoloji Puanı: ${data.techScore}/10</li>
+                <li>Maliyet Avantajı: ${costStatus} (${simulatedCostScore1.toFixed(1)}/10)</li>
+                <li>6 Ay Sonraki Talep: ${demandStatus} (${data.futureForecastAvg} Adet)</li>
+                <li style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed #cbd5e1;">
+                    <strong>Senaryo Riski:</strong> <span style="color: ${riskColor}; font-weight: bold;">${riskLevel}</span>
+                </li>
+            `;
+        }
+
+        updateStrategyChart();
+
+        function confirmShipment() {
+            const citySelect = document.getElementById('logisticsCitySelect');
+            const selectedCity = citySelect.value;
+            const data = logisticsData[selectedCity];
+            const modeName = currentLogisticsMode === 'sea' ? 'Denizyolu (JIT)' : (currentLogisticsMode === 'rail' ? 'Demiryolu' : 'Tır Filosu');
+            
+            const shipmentId = '#PLN-' + Math.floor(1000 + Math.random() * 9000);
+            
+            const date = new Date();
+            date.setMonth(date.getMonth() + 6);
+            const formattedDate = date.toLocaleDateString('tr-TR');
+
+            const newShipment = {
+                id: shipmentId,
+                city: data.name,
+                firm: modeName,
+                statusHTML: '<span class="status-orta">Hazırlanıyor</span>',
+                date: formattedDate
+            };
+            
+            const shipments = getStoredShipments();
+            shipments.push(newShipment);
+            localStorage.setItem('kds_shipments', JSON.stringify(shipments));
+            renderShipmentsTable();
+            showToast(`<b>Stratejik Plan Onaylandı!</b><br>Hedef: ${data.name}<br>Yöntem: ${modeName}<br>Tarih: ${formattedDate}`, 'success');
+        }
+
+        const forecastData = [
+            { product: 'Eco-Smart Bulaşık Makinesi', current: 320, forecast: 550, increase: '+72%', risk: 'Düşük', suggestion: 'Lansman Yapılmalı', statusClass: 'status-iyi' },
+            { product: 'No-Frost XL Buzdolabı', current: 800, forecast: 850, increase: '+6%', risk: 'Orta', suggestion: 'Stok Kontrolü', statusClass: 'status-orta' },
+            { product: 'Hibrit Kurutma Makinesi', current: 150, forecast: 400, increase: '+166%', risk: 'Düşük', suggestion: 'Agresif Pazarlama', statusClass: 'status-iyi' },
+            { product: 'Inverter Klima 18000', current: 450, forecast: 600, increase: '+33%', risk: 'Orta', suggestion: 'Yaz Kampanyası', statusClass: 'status-orta' },
+            { product: 'Air Fryer XXL', current: 600, forecast: 950, increase: '+58%', risk: 'Düşük', suggestion: 'Stok Artırılmalı', statusClass: 'status-iyi' }
+        ];
+
+        function renderForecastTable(data) {
+            const tbody = document.getElementById('forecastTableBody');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const row = `<tr>
+                    <td>${item.product}</td>
+                    <td>${item.current}</td>
+                    <td>${item.forecast}</td>
+                    <td>${item.increase}</td>
+                    <td class="${item.statusClass}">${item.risk}</td>
+                    <td>${item.suggestion}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function filterForecastTable() {
+            const filterValue = document.getElementById('riskFilter').value;
+            const filteredData = filterValue === 'all' ? forecastData : forecastData.filter(item => item.risk === filterValue);
+            renderForecastTable(filteredData);
+            updateInfoCards(filterValue);
+        }
+
+        const infoCardsData = {
+            'all': [
+                { icon: 'fa-arrow-up', color: '#e8f6f3', title: 'Yüksek Büyüme', text: 'Hibrit Kurutma Makinesi pazarında %166 artış bekleniyor.' },
+                { icon: 'fa-leaf', color: '#d4edda', title: 'Trend', text: 'Eco-Smart serisi enerji tasarrufu nedeniyle revaçta.' }
+            ],
+            'Düşük': [
+                { icon: 'fa-check-circle', color: '#d4edda', title: 'Fırsat', text: 'Kurutma ve Bulaşık makineleri için yatırım tam zamanı.' },
+                { icon: 'fa-chart-line', color: '#e8f6f3', title: 'Güvenli', text: 'Pazar doygunluğu düşük, büyüme potansiyeli yüksek.' }
+            ],
+            'Orta': [
+                { icon: 'fa-exclamation-circle', color: '#fff3cd', title: 'Rekabet', text: 'Buzdolabı segmentinde rekabet artıyor, kar marjı sabit.' },
+                { icon: 'fa-tags', color: '#d1ecf1', title: 'Kampanya', text: 'XL Buzdolabı için değişim kampanyası planlanabilir.' }
+            ],
+            'Yüksek': [
+                { icon: 'fa-times-circle', color: '#f8d7da', title: 'Risk', text: 'Eski teknoloji ürünlerde stok maliyeti artıyor.' },
+                { icon: 'fa-ban', color: '#f5c6cb', title: 'Aksiyon', text: 'Acil durum planı devreye alınmalı, siparişler durdurulmalı.' }
+            ]
+        };
+
+        function updateInfoCards(filterValue) {
+            const container = document.getElementById('infoCardsContainer');
+            const cards = infoCardsData[filterValue] || infoCardsData['all'];
+            
+            let html = '';
+            cards.forEach(card => {
+                html += `
+                    <div style="padding: 10px; background: ${card.color}; border-radius: 5px; margin-bottom: 10px;">
+                        <strong><i class="fas ${card.icon}"></i> ${card.title}:</strong> ${card.text}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        renderForecastTable(forecastData);
+        updateInfoCards('all');
+
+        var miniMap = L.map('miniMap', {
+            zoomControl: true,
+            dragging: true,
+            scrollWheelZoom: false,
+            touchZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            keyboard: false,
+            attributionControl: false
+        }).setView([39.9334, 32.8597], 10);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+        var miniMarker = L.marker([39.9334, 32.8597]).addTo(miniMap);
+        
+        updateLogistics();
+
+        var vehicleLayerGroup = L.layerGroup().addTo(miniMap);
+        
+        const simulatedVehicles = [
+            { id: '34-VR-101', start: [41.0082, 28.9784], end: [39.9334, 32.8597], progress: 0.1, speed: 0.002, icon: 'fa-truck' },
+            { id: '35-KL-442', start: [38.4237, 27.1428], end: [40.1885, 29.0610], progress: 0.4, speed: 0.003, icon: 'fa-truck-moving' },
+            { id: '07-ANT-99', start: [36.8969, 30.7133], end: [38.7569, 30.5387], progress: 0.7, speed: 0.002, icon: 'fa-shipping-fast' },
+            { id: '61-TRB-61', start: [41.0027, 39.7168], end: [39.7477, 37.0179], progress: 0.2, speed: 0.003, icon: 'fa-truck' }
+        ];
+
+        async function initVehicleRoutes() {
+            for (let v of simulatedVehicles) {
+                const start = v.start;
+                const end = v.end;
+                const url = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`;
+                
+                try {
+                    const response = await fetch(url);
+                    const json = await response.json();
+                    if (json.code === 'Ok' && json.routes && json.routes.length > 0) {
+                        v.path = json.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    }
+                } catch (e) { console.error("Araç rotası alınamadı", e); }
+            }
+        }
+        initVehicleRoutes();
+
+        function animateVehicles() {
+            vehicleLayerGroup.clearLayers();
+            
+            simulatedVehicles.forEach(v => {
+                v.progress += v.speed;
+                if (v.progress >= 1) v.progress = 0;
+
+                let lat, lng;
+
+                if (v.path && v.path.length > 0) {
+                    const totalPoints = v.path.length;
+                    const exactIndex = v.progress * (totalPoints - 1);
+                    const index = Math.floor(exactIndex);
+                    const nextIndex = Math.min(index + 1, totalPoints - 1);
+                    const segmentProgress = exactIndex - index;
+
+                    const p1 = v.path[index];
+                    const p2 = v.path[nextIndex];
+
+                    lat = p1[0] + (p2[0] - p1[0]) * segmentProgress;
+                    lng = p1[1] + (p2[1] - p1[1]) * segmentProgress;
+                } else {
+                    lat = v.start[0] + (v.end[0] - v.start[0]) * v.progress;
+                    lng = v.start[1] + (v.end[1] - v.start[1]) * v.progress;
+                }
+
+                const iconHtml = `<div style="color: var(--brand-color); font-size: 16px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));"><i class="fas ${v.icon}"></i></div>`;
+                const vIcon = L.divIcon({ className: 'vehicle-icon', html: iconHtml, iconSize: [20, 20], iconAnchor: [10, 10] });
+
+                L.marker([lat, lng], { icon: vIcon, zIndexOffset: 1000 }).addTo(vehicleLayerGroup).bindTooltip(`<b>${v.id}</b>`, { direction: 'top', offset: [0, -10] });
+            });
+        }
+        setInterval(animateVehicles, 100);
+
+        function launchProduct() {
+            const productKey = document.getElementById('strategyProductSelect').value;
+            const data = detailedProductData[productKey];
+            
+            const date = new Date();
+            const formattedDate = date.toLocaleDateString('tr-TR');
+            const statusHTML = `<span style='color: var(--success-color); font-weight: bold;'><i class='fas fa-check-circle'></i> Satışta</span>`;
+
+            const tbody = document.getElementById('launchedProductsTableBody');
+            
+            const newRow = `<tr>
+                <td>${data.name}</td>
+                <td>${formattedDate}</td>
+                <td>${statusHTML}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="flex: 1; background: #ecf0f1; height: 8px; border-radius: 4px;">
+                            <div style="width: 5%; height: 100%; background: var(--brand-color); border-radius: 4px;"></div>
+                        </div>
+                        <span style="font-size: 0.85rem; font-weight: bold;">%5</span>
+                    </div>
+                </td>
+                <td><button onclick="openProductModal('${data.name}', '${formattedDate}', '${statusHTML.replace(/'/g, "\\'")}', '%5')" style="padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; color: #555;"><i class="fas fa-eye"></i> Detay</button></td>
+            </tr>`;
+            
+            tbody.insertAdjacentHTML('afterbegin', newRow);
+            showToast(`<b>${data.name}</b> başarıyla satışa çıkarıldı ve takip listesine eklendi!`, 'success');
+        }
+
+        function openProductModal(name, date, statusHTML, performance) {
+            document.getElementById('modalProductName').innerText = name;
+            document.getElementById('modalLaunchDate').innerText = date;
+            document.getElementById('modalStatus').innerHTML = statusHTML;
+            document.getElementById('modalPerformance').innerText = performance;
+            
+            const views = Math.floor(Math.random() * 5000) + 500;
+            const cart = Math.floor(views * 0.12);
+            const conversion = (Math.random() * 3 + 1).toFixed(2);
+
+            document.getElementById('modalExtraDetails').innerHTML = `
+                <h4 style="margin: 0 0 15px 0;">📊 Canlı Metrikler (Son 24 Saat)</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748b;">Görüntülenme</div>
+                        <div style="font-weight: bold; font-size: 1.1rem;">${views}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748b;">Sepete Ekleme</div>
+                        <div style="font-weight: bold; font-size: 1.1rem;">${cart}</div>
+                    </div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748b;">Dönüşüm</div>
+                        <div style="font-weight: bold; font-size: 1.1rem; color: var(--success-color);">%${conversion}</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('productDetailModal').style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById('productDetailModal').style.display = "none";
+        }
+
+        function openDealerStockModal(dealerName) {
+            document.getElementById('stockModalTitle').innerText = dealerName + " - Stoktaki Ürünler";
+            const tbody = document.getElementById('dealerStockTableBody');
+            tbody.innerHTML = '';
+
+            const products = [
+                { name: 'Eco-Smart Bulaşık M.', category: 'Beyaz Eşya', stock: Math.floor(Math.random() * 50) + 5 },
+                { name: 'No-Frost XL Buzdolabı', category: 'Beyaz Eşya', stock: Math.floor(Math.random() * 30) + 2 },
+                { name: 'Inverter Klima 18000', category: 'Klima', stock: Math.floor(Math.random() * 20) },
+                { name: 'Air Fryer XXL', category: 'Küçük Ev Aletleri', stock: Math.floor(Math.random() * 80) + 10 },
+                { name: 'Ultra Sessiz Çamaşır Mak.', category: 'Beyaz Eşya', stock: Math.floor(Math.random() * 40) + 5 }
+            ];
+
+            products.forEach(p => {
+                let status = '';
+                if(p.stock > 20) status = '<span class="status-iyi">Yeterli Stok</span>';
+                else if(p.stock > 5) status = '<span class="status-orta">Kritik Seviye</span>';
+                else status = '<span class="status-kotu">Tükendi</span>';
+
+                tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.category}</td><td>${p.stock} Adet</td><td>${status}</td></tr>`;
+            });
+
+            document.getElementById('dealerStockModal').style.display = 'block';
+        }
+
+        function closeDealerStockModal() {
+            document.getElementById('dealerStockModal').style.display = 'none';
+        }
+
+        async function fetchSatisUrunleri() {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Yükleniyor...</td></tr>';
+
+            try {
+                await new Promise(r => setTimeout(r, 500));
+                const data = [
+                    { id: 101, urun_adi: 'Eco-Smart Bulaşık Makinesi', kategori: 'Beyaz Eşya', fiyat: 12500, stok: 150 },
+                    { id: 102, urun_adi: 'No-Frost XL Buzdolabı', kategori: 'Beyaz Eşya', fiyat: 28000, stok: 45 },
+                    { id: 103, urun_adi: 'Inverter Klima 18000', kategori: 'Klima', fiyat: 18500, stok: 80 },
+                    { id: 104, urun_adi: 'Air Fryer XXL', kategori: 'Küçük Ev Aletleri', fiyat: 4500, stok: 300 },
+                    { id: 105, urun_adi: 'Ultra Sessiz Çamaşır Mak.', kategori: 'Beyaz Eşya', fiyat: 16000, stok: 20 },
+                    { id: 106, urun_adi: 'Robot Süpürge Pro', kategori: 'Küçük Ev Aletleri', fiyat: 9500, stok: 0 },
+                    { id: 107, urun_adi: '4K Smart LED TV 55"', kategori: 'Elektronik', fiyat: 22000, stok: 12 }
+                ];
+
+                tbody.innerHTML = '';
+                data.forEach(item => {
+                    let stockStatus = '';
+                    if (item.stok > 50) stockStatus = `<span class="status-iyi">Stokta Var</span>`;
+                    else if (item.stok > 0) stockStatus = `<span class="status-orta">Kritik Stok</span>`;
+                    else stockStatus = `<span class="status-kotu">Tükendi</span>`;
+
+                    tbody.innerHTML += `<tr><td>#${item.id}</td><td>${item.urun_adi}</td><td>${item.kategori}</td><td>₺${item.fiyat.toLocaleString('tr-TR')}</td><td>${item.stok} Adet</td><td>${stockStatus}</td></tr>`;
+                });
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Veri çekilemedi.</td></tr>';
+                console.error(error);
+            }
+        }
+        fetchSatisUrunleri();
+
+        function initProductHealth() {
+            const ctxService = document.getElementById('serviceFailureChart').getContext('2d');
+            new Chart(ctxService, {
+                type: 'bar',
+                data: {
+                    labels: ['Bulaşık Mak.', 'Buzdolabı', 'Klima', 'Küçük Ev Aletleri', 'Çamaşır Mak.'],
+                    datasets: [{
+                        label: 'Arıza Oranı (%)',
+                        data: [1.2, 2.8, 4.5, 1.8, 1.5],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#10b981'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Arıza Oranı (%)' } } }
+                }
+            });
+
+            const alerts = [
+                { product: 'Inverter Klima 18000', issue: 'Aşırı Isınma (Kart Arızası)', risk: 'Yüksek', action: 'Yedek Kart Stoğu Artırımı' },
+                { product: 'No-Frost XL Buzdolabı', issue: 'Nem Kaynaklı Korozyon', risk: 'Orta', action: 'Tropikal Koruma Kiti Sevkiyatı' },
+                { product: 'Robot Süpürge Pro', issue: 'Batarya Ömrü Şikayeti', risk: 'Düşük', action: 'Yazılım Güncellemesi Yayınla' }
+            ];
+
+            const alertContainer = document.getElementById('serviceAlertsList');
+            alertContainer.innerHTML = '';
+
+            alerts.forEach(alert => {
+                let color = alert.risk === 'Yüksek' ? '#ef4444' : (alert.risk === 'Orta' ? '#f59e0b' : '#3b82f6');
+                let icon = alert.risk === 'Yüksek' ? 'fa-fire' : (alert.risk === 'Orta' ? 'fa-tint' : 'fa-battery-quarter');
+                
+                const alertHtml = `
+                    <div style="background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid ${color}; padding: 12px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
+                            <strong style="color: var(--text-main); font-size: 0.95rem;">${alert.product}</strong>
+                            <span style="background: ${color}20; color: ${color}; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${alert.risk} Risk</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 8px;">
+                            <i class="fas ${icon}" style="width: 16px;"></i> ${alert.issue}
+                        </div>
+                        <button onclick="applyProductServiceAction('${alert.product}', '${alert.action}')" style="width: 100%; padding: 6px; background: ${color}; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: 0.2s;">
+                            <i class="fas fa-check"></i> ${alert.action}
+                        </button>
+                    </div>
+                `;
+                alertContainer.innerHTML += alertHtml;
+            });
+        }
+        initProductHealth();
+        
+        function initClimateAnalysis() {
+            const data = [
+                { city: 'Antalya', dealer: 'Merkez Şube', temp: '38°C', humidity: '%65', product: 'Buzdolabı & Derin Dondurucu', risk: 'Aşırı Isınma Kaynaklı Performans Düşüşü', action: 'Ekstra Soğutucu Gaz ve Kart Stoğu' },
+                { city: 'Erzurum', dealer: 'Yakutiye Bayi', temp: '-12°C', humidity: '%40', product: 'Kombi & Isıtıcılar', risk: 'Donma ve Yüksek Talep', action: 'Isıtıcı Stoğu Arttırımı & Don Önleyici Kit' },
+                { city: 'Trabzon', dealer: 'Ortahisar Bayi', temp: '22°C', humidity: '%88', product: 'Çamaşır Makinesi', risk: 'Yüksek Nem Kaynaklı Korozyon', action: 'Korozyon Önleyici Sprey & Kart Koruması' },
+                { city: 'İzmir', dealer: 'Karşıyaka Bayi', temp: '35°C', humidity: '%50', product: 'Klima Sistemleri', risk: 'Aşırı Yüklenme (Kompresör)', action: 'Yedek Kapasitör ve Fan Motoru Sevkiyatı' },
+                { city: 'Şanlıurfa', dealer: 'Haliliye Bayi', temp: '41°C', humidity: '%20', product: 'Elektronik Cihazlar', risk: 'Termal Kapanma', action: 'Soğutucu Ped ve Fan Aksesuarı Kampanyası' }
+            ];
+
+            const tbody = document.getElementById('climateAnalysisTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                let tempColor = parseInt(item.temp) > 30 ? '#ef4444' : (parseInt(item.temp) < 0 ? '#3b82f6' : '#f59e0b');
+                
+                const row = `
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-main);">${item.city}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);"><i class="fas fa-store"></i> ${item.dealer}</div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span style="background: ${tempColor}20; color: ${tempColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.85rem;"><i class="fas fa-thermometer-half"></i> ${item.temp}</span>
+                                <span style="background: #ecfdf5; color: #059669; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.85rem;"><i class="fas fa-tint"></i> ${item.humidity}</span>
+                            </div>
+                        </td>
+                        <td style="font-weight: 500;">${item.product}</td>
+                        <td style="color: var(--accent-color); font-size: 0.9rem;"><i class="fas fa-exclamation-circle"></i> ${item.risk}</td>
+                        <td style="color: var(--brand-color); font-weight: 600; font-size: 0.9rem;">${item.action}</td>
+                        <td><button onclick="applyClimateAction('${item.city}', '${item.action}')" style="padding: 6px 12px; background: var(--text-main); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: 0.2s;"><i class="fas fa-check"></i> Onayla</button></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        initClimateAnalysis();
+
+        function applyClimateAction(city, action) {
+            showToast(`<b>${city}</b> için CBS kararı uygulandı:<br>${action}`, 'success');
+        }
+
+        function applyProductServiceAction(product, action) {
+            showToast(`<b>${product}</b> için aksiyon alındı:<br>${action}`, 'success');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const icon = document.querySelector('button[onclick="toggleTheme()"] i');
+            if(document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+            updateChartColors();
+        }
+
+        function updateChartColors() {
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            const colors = {
+                light: {
+                    bar: ['#94a3b8', '#2563eb'],
+                    line: ['#2563eb', '#ef4444', '#f59e0b', '#3b82f6', '#e11d48'],
+                    grid: '#e5e5e5',
+                    text: '#666'
+                },
+                dark: {
+                    bar: ['#94a3b8', '#60a5fa'],
+                    line: ['#60a5fa', '#f87171', '#fbbf24', '#60a5fa', '#f472b6'],
+                    grid: '#374151',
+                    text: '#e5e5e5'
+                }
+            };
+
+            const theme = isDark ? colors.dark : colors.light;
+
+            const setScaleColors = (chart) => {
+                if (!chart.options.scales) chart.options.scales = {};
+                ['x', 'y'].forEach(axis => {
+                    if (!chart.options.scales[axis]) chart.options.scales[axis] = {};
+                    if (!chart.options.scales[axis].ticks) chart.options.scales[axis].ticks = {};
+                    if (!chart.options.scales[axis].grid) chart.options.scales[axis].grid = {};
+                    
+                    chart.options.scales[axis].ticks.color = theme.text;
+                    chart.options.scales[axis].grid.color = theme.grid;
+                });
+            };
+
+            if (window.forecastBarChart) {
+                window.forecastBarChart.data.datasets[0].backgroundColor = theme.bar[0];
+                window.forecastBarChart.data.datasets[1].backgroundColor = theme.bar[1];
+                setScaleColors(window.forecastBarChart);
+                window.forecastBarChart.update();
+            }
+
+            if (window.forecastTrendLineChart) {
+                window.forecastTrendLineChart.data.datasets.forEach((dataset, index) => {
+                    if (theme.line[index]) {
+                        dataset.borderColor = theme.line[index];
+                    }
+                });
+                setScaleColors(window.forecastTrendLineChart);
+                if (window.forecastTrendLineChart.options.plugins.title) {
+                    window.forecastTrendLineChart.options.plugins.title.color = theme.text;
+                }
+                window.forecastTrendLineChart.update();
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            toast.innerHTML = `<i class="fas ${icon} fa-lg"></i> <div>${message}</div>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'fadeOut 0.5s forwards'; setTimeout(() => toast.remove(), 500); }, 4000);
+        }
+
+        const defaultPendingDealers = [
+            { city: 'Bursa', date: '15.05.2025', statusHTML: '<span style="color: var(--brand-color); font-weight: bold;"><i class="fas fa-tools"></i> İnşaat Başladı</span>', duration: '12 Ay' }
+        ];
+
+        const defaultShipments = [
+            { id: '#PLN-8842', city: 'Marmara Bölge', firm: 'Denizyolu (JIT)', statusHTML: '<span class="status-iyi">Onaylandı</span>', date: '15.11.2024' },
+            { id: '#PLN-8843', city: 'İç Anadolu Hub', firm: 'Demiryolu', statusHTML: '<span class="status-orta">Planlanıyor</span>', date: '20.11.2024' }
+        ];
+
+        function getStoredDealers() {
+            const stored = localStorage.getItem('kds_pending_dealers');
+            return stored ? JSON.parse(stored) : defaultPendingDealers;
+        }
+
+        function getStoredShipments() {
+            const stored = localStorage.getItem('kds_shipments');
+            return stored ? JSON.parse(stored) : defaultShipments;
+        }
+
+        function renderPendingDealersTable() {
+            const dealers = getStoredDealers();
+            const tbody = document.getElementById('pendingDealersTableBody');
+            tbody.innerHTML = '';
+            dealers.forEach(d => {
+                const row = `<tr>
+                    <td>${d.city}</td>
+                    <td>${d.date}</td>
+                    <td>${d.statusHTML}</td>
+                    <td>${d.duration}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function renderShipmentsTable() {
+            const filter = document.getElementById('shipmentFilter') ? document.getElementById('shipmentFilter').value : 'all';
+            const shipments = getStoredShipments();
+            const tbody = document.getElementById('shipmentTableBody');
+            tbody.innerHTML = '';
+            shipments.forEach(s => {
+                if (filter === 'all' || s.statusHTML.includes(filter)) {
+                    const row = `<tr><td>${s.id}</td><td>${s.city}</td><td>${s.firm}</td><td>${s.statusHTML}</td><td>${s.date}</td></tr>`;
+                    tbody.innerHTML += row;
+                }
+            });
+        }
+
+        renderPendingDealersTable();
+        renderShipmentsTable();
+
+        const sections = document.querySelectorAll('.section-content');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        function onScroll() {
+            let current = "";
+            sections.forEach((section) => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= (sectionTop - 150)) {
+                    current = section.getAttribute("id");
+                }
+            });
+
+            navLinks.forEach((link) => {
+                link.classList.remove("active");
+                if (link.getAttribute("href") === "#" + current) {
+                    link.classList.add("active");
+                }
+            });
+        }
+        
+        window.addEventListener("scroll", onScroll);
+        onScroll();
+
+        const scrollTopBtn = document.getElementById("scrollTopBtn");
+        
+        window.addEventListener("scroll", () => {
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                scrollTopBtn.style.display = "block";
+            } else {
+                scrollTopBtn.style.display = "none";
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('genel');
+            
+            const footer = document.createElement('div');
+            footer.style.marginTop = '40px';
+            footer.style.paddingTop = '15px';
+            footer.style.borderTop = '2px solid #e2e8f0';
+            footer.style.fontSize = '11px';
+            footer.style.color = '#64748b';
+            footer.style.display = 'flex';
+            footer.style.justifyContent = 'space-between';
+            footer.innerHTML = `<span><strong>Rapor Tarihi:</strong> ${new Date().toLocaleString('tr-TR')}</span><span><strong>Oluşturan:</strong> Doğa Yılgı (Bölge Müdürü)</span>`;
+            
+            element.appendChild(footer);
+
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     'KDS_Genel_Rapor_' + new Date().toLocaleDateString('tr-TR').replace(/\./g, '_') + '.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            showToast('PDF Raporu hazırlanıyor...', 'info');
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.removeChild(footer);
+                showToast('Rapor başarıyla indirildi.', 'success');
+            });
+        }
+    </script>
+</body>
+</html>
