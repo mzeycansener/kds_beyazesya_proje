@@ -56,7 +56,7 @@ Sistem tarafından yönetilen ve analizi yapılan ana ürün grupları ve hedef 
   <table>
     <tr>
       <td align="center" width="33%">
-        <img width="1537" height="821" alt="Ekran görüntüsü 2025-12-22 000654" src="https://github.com/user-attachments/assets/3479ed01-9239-4f11-811e-98ca4b1813ff" />
+        <img width="1545" height="922" alt="Ekran görüntüsü 2026-01-17 231734" src="https://github.com/user-attachments/assets/dab7760b-bff1-41a5-9340-7d5fb33b2885" />
         <br><b>Veritabanı Bağlantısı</b>
       </td>
       <td align="center" width="33%">
