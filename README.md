@@ -160,9 +160,14 @@ Tüm endpoint'ler `/api` ana yolu altındadır.
 
 ## Özel İş Senaryoları
 
-Bu projede, backend mantığını göstermek için iki özel senaryo bulunmaktadır:
+### 1. Stratejik Karar Senaryoları
 
-### 1. Stok Kontrolü (`/api/sales`)
+1.  **Bayi Açma/Kapatma Kararı:** Bir şehrin Coğrafi Bilgi Sistemleri (CBS) analizi sonuçları, o bölgedeki pazar potansiyeli ve rekabet durumu hakkında önemli veriler sağlar.
+    *   **İş Kuralı:** CBS analizi sonucunda pazar potansiyeli "yüksek" ve rekabet "düşük" olarak belirlenen şehirlere yeni bayi açılması için öncelik verilir. Potansiyeli "düşük" veya rekabeti "yüksek" olan şehirlere bayi açma kararı tekrar değerlendirilir veya ertelenir.
+2.  **Kargo Gönderim Yöntemi Seçimi:** Beyaz eşya ürünlerinin müşterilere ulaştırılmasında maliyet, teslimat süresi ve ürün güvenliği önemli faktörlerdir.
+    *   **İş Kuralı:** Ürün tipi (örn. hassaslık), gönderim mesafesi ve maliyet hedefleri dikkate alınarak en uygun taşıma yöntemi seçilir. Örneğin, uzun mesafeli ve büyük hacimli gönderiler için demiryolu veya denizyolu daha ekonomik olabilirken, kısa mesafeli veya acil gönderiler için karayolu tercih edilebilir. Sistem, bu kurallara göre en uygun yöntemi otomatik olarak önerir veya uygular.
+
+### 2. Stok Kontrolü (`/api/sales`)
 
 Bir satış işlemi (`POST /api/sales`) gerçekleştirilirken sistem, istenen ürün adedinin veritabanındaki mevcut stoktan fazla olup olmadığını kontrol eder.
 
@@ -175,6 +180,7 @@ Yeni bir kullanıcı kaydı (`POST /api/register`) oluşturulurken sistem, istek
 
 *   **Başarılı Durum:** Eğer e-posta adresi daha önce kaydedilmemişse, yeni kullanıcı oluşturulur.
 *   **Hata Durumu:** Eğer e-posta adresi zaten mevcutsa, sistem `409 Conflict` status kodu ile birlikte bu e-postanın zaten kullanıldığını belirten bir hata mesajı döner.
+  
 ---
 
 ### 📂 Proje Klasör Yapısı
