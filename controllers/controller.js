@@ -1,11 +1,19 @@
-const db = require('../db/mysql_connect');
+const db = require('../db/mysql_connect'); // Still needed for transactions in makeSale for now
 const APIError = require('../utils/errors');
 const Response = require('../utils/response');
 
+// Import Models
+const User = require('../models/UserModel');
+const Dealer = require('../models/DealerModel');
+const City = require('../models/CityModel');
+const Urun = require('../models/UrunModel');
+const SaleProduct = require('../models/SaleProductModel');
+const LaunchProduct = require('../models/LaunchProductModel');
+
 const getProducts = async (req, res) => {
     try {
-        const [salesRows] = await db.execute("SELECT *, 'Satis' as status FROM satis_urunleri");
-        const [launchRows] = await db.execute("SELECT *, 'Lansman' as status FROM lansman_urunleri");
+        const salesRows = await SaleProduct.getAll();
+        const launchRows = await LaunchProduct.getAll();
         
         new Response([...salesRows, ...launchRows]).success(res);
     } catch (error) {
@@ -19,8 +27,8 @@ const addProduct = async (req, res) => {
         if (!urun_adi || !tur) {
             throw new APIError('Ürün adı ve türü zorunludur.', 400);
         }
-        const [result] = await db.execute('INSERT INTO urunler (urun_adi, tur) VALUES (?, ?)', [urun_adi, tur]);
-        new Response({ id: result.insertId, urun_adi, tur }, 'Ürün başarıyla eklendi.').success(res);
+        const newUrun = await Urun.create({ urun_adi, tur });
+        new Response(newUrun, 'Ürün başarıyla eklendi.').success(res);
     } catch (error) {
         throw error;
     }
@@ -28,13 +36,17 @@ const addProduct = async (req, res) => {
 
 const getDealers = async (req, res) => {
     try {
-        const sql = `
-            SELECT d.id, d.bayi_adi, c.sehir_adi as city, d.satis_miktari, d.kar_miktari, d.durum 
-            FROM bayiler d
-            JOIN sehirler c ON d.sehir_id = c.id
-        `;
-        const [rows] = await db.execute(sql);
-        new Response(rows).success(res);
+        const dealers = await Dealer.getAll();
+        const cities = await City.getAll();
+        
+        const dealersWithCities = dealers.map(dealer => {
+            const city = cities.find(c => c.id === dealer.sehir_id);
+            return {
+                ...dealer,
+                city: city ? city.sehir_adi : 'Bilinmiyor'
+            };
+        });
+        new Response(dealersWithCities).success(res);
     } catch (error) {
         throw error;
     }
@@ -42,8 +54,8 @@ const getDealers = async (req, res) => {
 
 const getCities = async (req, res) => {
     try {
-        const [rows] = await db.execute('SELECT * FROM sehirler');
-        new Response(rows).success(res);
+        const cities = await City.getAll();
+        new Response(cities).success(res);
     } catch (error) {
         throw error;
     }
@@ -56,14 +68,14 @@ const register = async (req, res) => {
             throw new APIError('E-posta ve şifre zorunludur.', 400);
         }
 
-        const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
-        if (users.length > 0) {
+        const existingUser = await User.findByEmail(email);
+        if (existingUser) {
             throw new APIError('Bu e-posta adresi zaten kullanılıyor.', 409);
         }
 
         // Note: In a real application, hash the password before saving it.
-        const [result] = await db.execute('INSERT INTO users (email, password) VALUES (?, ?)', [email, password]);
-        new Response({ id: result.insertId, email }, 'Kullanıcı başarıyla oluşturuldu.').success(res);
+        const newUser = await User.create(email, password);
+        new Response(newUser, 'Kullanıcı başarıyla oluşturuldu.').success(res);
     } catch (error) {
         throw error;
     }
@@ -76,12 +88,11 @@ const login = async (req, res) => {
             throw new APIError('E-posta ve şifre zorunludur.', 400);
         }
 
-        const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
-        if (users.length === 0) {
+        const user = await User.findByEmail(email);
+        if (!user) {
             throw new APIError('Kullanıcı bulunamadı.', 404);
         }
 
-        const user = users[0];
         // Note: In a real application, compare hashed passwords.
         if (user.password !== password) {
             throw new APIError('Geçersiz şifre.', 401);
@@ -103,19 +114,18 @@ const makeSale = async (req, res) => {
             throw new APIError('Bayi ID, Ürün ID ve istenen adet zorunludur.', 400);
         }
         
-        const [productRows] = await connection.execute('SELECT stok_adedi FROM satis_urunleri WHERE id = ? FOR UPDATE', [urun_id]);
+        const currentStock = await SaleProduct.getStockForUpdate(urun_id, connection);
 
-        if (productRows.length === 0) {
+        if (currentStock === null) {
             throw new APIError('Satılacak ürün bulunamadı.', 404);
         }
 
-        const currentStock = productRows[0].stok_adedi;
         if (istenen_adet > currentStock) {
             throw new APIError(`Yetersiz stok. Mevcut stok: ${currentStock}`, 400);
         }
 
         const newStock = currentStock - istenen_adet;
-        await connection.execute('UPDATE satis_urunleri SET stok_adedi = ? WHERE id = ?', [newStock, urun_id]);
+        await SaleProduct.updateStock(urun_id, newStock, connection);
         
         // You would typically insert into a 'sales' table here.
         // For this example, we'll just log it.
@@ -132,14 +142,14 @@ const makeSale = async (req, res) => {
         connection.release();
     }
 };
-
-
-module.exports = {
-    getProducts,
-    addProduct,
-    getDealers,
-    getCities,
-    register,
-    login,
-    makeSale
-};
+                
+                
+                module.exports = {
+                    getProducts,
+                    addProduct,
+                    getDealers,
+                    getCities,
+                    register,
+                    login,
+                    makeSale
+                };
